@@ -145,7 +145,7 @@ export class ErrorHandler {
     /**
      * Setup global error handling
      */
-    setupGlobalErrorHandling() {
+    setupGlobalErrorHandling(): void {
         // Handle uncaught errors
         window.addEventListener('error', (event) => {
             this.logger.error('Uncaught error', {
@@ -169,7 +169,7 @@ export class ErrorHandler {
     /**
      * Handle API errors
      */
-    handleApiError(error, context = '') {
+    handleApiError(error: any, context: string = ''): string {
         const errorInfo = {
             context,
             status: error.status,
@@ -196,7 +196,7 @@ export class ErrorHandler {
     /**
      * Handle file upload errors
      */
-    handleUploadError(error, file = null) {
+    handleUploadError(error: any, file: File | null = null): string {
         let message = 'Upload failed. ';
         
         if (file && !CONFIG.UPLOAD.SUPPORTED_TYPES.includes(file.type)) {
@@ -216,7 +216,7 @@ export class ErrorHandler {
     /**
      * Handle face detection errors
      */
-    handleFaceDetectionError(error) {
+    handleFaceDetectionError(error: any): string {
         this.logger.error('Face detection error', error);
         
         if (error.message && error.message.includes('model')) {
@@ -231,7 +231,11 @@ export class ErrorHandler {
     /**
      * Try to execute a function with error handling
      */
-    async tryExecute(fn, context = '', fallbackValue = null) {
+    async tryExecute<T>(
+        fn: () => Promise<T>, 
+        context: string = '', 
+        fallbackValue: T | null = null
+    ): Promise<T | null> {
         try {
             return await fn();
         } catch (error) {
@@ -243,15 +247,18 @@ export class ErrorHandler {
     /**
      * Wrap async functions with error handling
      */
-    wrapAsync(fn, context = '') {
-        return async (...args) => {
+    wrapAsync<T extends (...args: any[]) => any>(
+        fn: T, 
+        context: string = ''
+    ): T {
+        return (async (...args: Parameters<T>) => {
             try {
                 return await fn(...args);
             } catch (error) {
                 this.logger.error(`Async error in ${context}`, error);
                 throw error;
             }
-        };
+        }) as T;
     }
 }
 
@@ -261,10 +268,10 @@ export const errorHandler = new ErrorHandler(logger);
 
 // Export convenience functions
 export const log = {
-    debug: (message, data) => logger.debug(message, data),
-    info: (message, data) => logger.info(message, data),
-    warn: (message, data) => logger.warn(message, data),
-    error: (message, data) => logger.error(message, data)
+    debug: (message: string, data?: any) => logger.debug(message, data),
+    info: (message: string, data?: any) => logger.info(message, data),
+    warn: (message: string, data?: any) => logger.warn(message, data),
+    error: (message: string, data?: any) => logger.error(message, data)
 };
 
 export default { Logger, ErrorHandler, logger, errorHandler, log };

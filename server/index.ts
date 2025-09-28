@@ -1,16 +1,20 @@
-const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs').promises;
-const { v4: uuidv4 } = require('uuid');
-require('dotenv').config();
+import express from 'express';
+import multer from 'multer';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs/promises';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+import type { Request, Response, NextFunction } from 'express';
+import type { Photo, PhotoTag } from '../src/types/index.js';
+
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT: number = Number(process.env.PORT) || 3000;
 
 // Generate a unique access token for this instance
-const ACCESS_TOKEN = process.env.ACCESS_TOKEN || uuidv4();
+const ACCESS_TOKEN: string = process.env.ACCESS_TOKEN || uuidv4();
 
 // Middleware
 app.use(cors());
@@ -18,13 +22,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Access token validation middleware
-const validateAccess = (req, res, next) => {
+const validateAccess = (req: Request, res: Response, next: NextFunction): void => {
     const token = req.query.token || req.headers['x-access-token'] || (req.body && req.body.token);
     
     if (!token || token !== ACCESS_TOKEN) {
-        return res.status(401).json({ 
+        res.status(401).json({ 
             error: 'Access denied. Invalid or missing access token.' 
         });
+        return;
     }
     
     next();
@@ -63,17 +68,17 @@ const upload = multer({
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            cb(new Error('Only image files are allowed!'), false);
+            cb(new Error('Only image files are allowed!') as any, false);
         }
     }
 });
 
 // Data storage (in production, you'd want to use a proper database)
-let photos = [];
+let photos: Photo[] = [];
 const photosFilePath = path.join(__dirname, 'photos.json');
 
 // Load existing photos on server start
-async function loadPhotos() {
+async function loadPhotos(): Promise<void> {
     try {
         const data = await fs.readFile(photosFilePath, 'utf8');
         photos = JSON.parse(data);
@@ -100,7 +105,7 @@ async function loadPhotos() {
 }
 
 // Save photos to file
-async function savePhotos() {
+async function savePhotos(): Promise<void> {
     try {
         await fs.writeFile(photosFilePath, JSON.stringify(photos, null, 2));
     } catch (error) {
@@ -111,14 +116,15 @@ async function savePhotos() {
 // Routes
 
 // Root route with access validation
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response): void => {
     const token = req.query.token;
     
     if (!token || token !== ACCESS_TOKEN) {
-        return res.status(401).json({
+        res.status(401).json({
             error: 'Access denied. Please use the correct access link.',
             message: 'You need a valid access token to view this wedding photo gallery.'
         });
+        return;
     }
     
     // Serve the main HTML file
@@ -126,12 +132,12 @@ app.get('/', (req, res) => {
 });
 
 // API to get all photos
-app.get('/api/photos', validateAccess, (req, res) => {
+app.get('/api/photos', validateAccess, (req: Request, res: Response): void => {
     res.json(photos);
 });
 
 // API to upload photos
-app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res) => {
+app.post('/api/upload', validateAccess, upload.single('photo'), async (req: Request, res: Response): Promise<void> => {
     try {
         console.log('Upload request received:', {
             hasFile: !!req.file,
@@ -141,19 +147,20 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
         
         if (!req.file) {
             console.log('No file in request');
-            return res.status(400).json({ error: 'No file uploaded' });
+            res.status(400).json({ error: 'No file uploaded' });
+            return;
         }
 
         const { tag = 'other' } = req.body;
         
-        const photo = {
+        const photo: Photo = {
             id: uuidv4(),
             filename: req.file.filename,
             originalName: req.file.originalname,
             url: `/uploads/${req.file.filename}?token=${ACCESS_TOKEN}`,
-            tag: tag,
-            people: [], // Array of people tags
-            faces: [], // Face detection data
+            tag: tag as PhotoTag,
+            people: [],
+            faces: [],
             size: req.file.size,
             uploadedAt: new Date().toISOString(),
             mimetype: req.file.mimetype
@@ -170,13 +177,14 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
 });
 
 // API to delete a photo (optional, for admin purposes)
-app.delete('/api/photos/:id', validateAccess, async (req, res) => {
+app.delete('/api/photos/:id', validateAccess, async (req: Request, res: Response): Promise<void> => {
     try {
         const photoId = req.params.id;
         const photoIndex = photos.findIndex(p => p.id === photoId);
         
         if (photoIndex === -1) {
-            return res.status(404).json({ error: 'Photo not found' });
+            res.status(404).json({ error: 'Photo not found' });
+            return;
         }
 
         const photo = photos[photoIndex];
@@ -201,14 +209,15 @@ app.delete('/api/photos/:id', validateAccess, async (req, res) => {
 });
 
 // API to update people tags and face data
-app.patch('/api/photos/:id/people', validateAccess, async (req, res) => {
+app.patch('/api/photos/:id/people', validateAccess, async (req: Request, res: Response): Promise<void> => {
     try {
         const photoId = req.params.id;
         const { people, faces } = req.body;
         
         const photo = photos.find(p => p.id === photoId);
         if (!photo) {
-            return res.status(404).json({ error: 'Photo not found' });
+            res.status(404).json({ error: 'Photo not found' });
+            return;
         }
         
         if (people !== undefined) photo.people = people;
@@ -264,17 +273,20 @@ app.use('/favicon.ico', (req, res) => {
 });
 
 // Error handling middleware
-app.use((error, req, res, next) => {
+app.use((error: any, req: Request, res: Response, next: NextFunction): void => {
     if (error instanceof multer.MulterError) {
         console.log('Multer error:', error.code, error.message);
         if (error.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File too large. Maximum size is 25MB.' });
+            res.status(400).json({ error: 'File too large. Maximum size is 25MB.' });
+            return;
         }
-        return res.status(400).json({ error: `Upload error: ${error.message}` });
+        res.status(400).json({ error: `Upload error: ${error.message}` });
+        return;
     }
     
     if (error.message && error.message.includes('Only image files are allowed')) {
-        return res.status(400).json({ error: 'Only image files are allowed' });
+        res.status(400).json({ error: 'Only image files are allowed' });
+        return;
     }
     
     console.error('Server error:', error);

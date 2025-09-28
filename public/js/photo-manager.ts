@@ -8,8 +8,14 @@ import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
 import Utils from './utils.js';
+import type { Photo } from '../../src/types/index.js';
 
 export class PhotoManager {
+    private photos: Photo[];
+    private filteredPhotos: Photo[];
+    private people: Set<string>;
+    private subscriptions: (() => void)[];
+
     constructor() {
         this.photos = [];
         this.filteredPhotos = [];
@@ -74,7 +80,7 @@ export class PhotoManager {
     /**
      * Set photos and update internal state
      */
-    setPhotos(photos) {
+    setPhotos(photos: Photo[]): void {
         this.photos = photos || [];
         this.extractPeopleFromPhotos();
         this.updateFilteredPhotos();
@@ -89,28 +95,28 @@ export class PhotoManager {
     /**
      * Get all photos
      */
-    getPhotos() {
+    getPhotos(): Photo[] {
         return [...this.photos]; // Return copy to prevent mutations
     }
 
     /**
      * Get filtered photos
      */
-    getFilteredPhotos() {
+    getFilteredPhotos(): Photo[] {
         return [...this.filteredPhotos];
     }
 
     /**
      * Get photo by ID
      */
-    getPhotoById(id) {
+    getPhotoById(id: string): Photo | undefined {
         return this.photos.find(photo => photo.id === id);
     }
 
     /**
      * Add a new photo
      */
-    addPhoto(photo) {
+    addPhoto(photo: Photo): boolean {
         if (!photo || !photo.id) {
             log.warn('Cannot add invalid photo', photo);
             return false;
@@ -144,7 +150,7 @@ export class PhotoManager {
     /**
      * Remove a photo
      */
-    removePhoto(photoId) {
+    removePhoto(photoId: string): Photo | null {
         const index = this.photos.findIndex(p => p.id === photoId);
         
         if (index >= 0) {
@@ -170,7 +176,7 @@ export class PhotoManager {
     /**
      * Update photo metadata
      */
-    updatePhoto(photoId, updates) {
+    updatePhoto(photoId: string, updates: Partial<Photo>): boolean {
         const photo = this.getPhotoById(photoId);
         
         if (!photo) {

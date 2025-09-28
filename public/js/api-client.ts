@@ -6,9 +6,34 @@
 import { CONFIG } from './config.js';
 import { log, errorHandler } from './logger.js';
 import Utils from './utils.js';
+import type { Photo, ApiResponse, UploadResponse } from '../../src/types/index.js';
+
+interface ApiClientOptions {
+    baseURL?: string;
+    accessToken?: string;
+}
+
+interface ApiClientStatus {
+    initialized: boolean;
+    hasToken: boolean;
+    baseURL: string;
+}
+
+interface RequestOptions {
+    params?: Record<string, any>;
+    headers?: Record<string, string>;
+    body?: any;
+    timeout?: number;
+    [key: string]: any;
+}
 
 export class ApiClient {
-    constructor(options = {}) {
+    private baseURL: string;
+    private accessToken: string | null;
+    private defaultHeaders: Record<string, string>;
+    private isInitialized: boolean;
+
+    constructor(options: ApiClientOptions = {}) {
         this.baseURL = options.baseURL || CONFIG.API.BASE_URL;
         this.accessToken = options.accessToken || Utils.getUrlParam('token');
         this.defaultHeaders = {
@@ -20,7 +45,7 @@ export class ApiClient {
     /**
      * Initialize the API client
      */
-    async initialize() {
+    async initialize(): Promise<void> {
         log.info('Initializing API Client');
         
         try {
@@ -37,7 +62,7 @@ export class ApiClient {
     /**
      * Get API client status
      */
-    getStatus() {
+    getStatus(): ApiClientStatus {
         return {
             initialized: this.isInitialized,
             hasToken: !!this.accessToken,
@@ -48,7 +73,7 @@ export class ApiClient {
     /**
      * Set or update access token
      */
-    setAccessToken(token) {
+    setAccessToken(token: string): void {
         this.accessToken = token;
         log.info('Access token updated');
     }
@@ -56,14 +81,14 @@ export class ApiClient {
     /**
      * Get current access token
      */
-    getAccessToken() {
+    getAccessToken(): string | null {
         return this.accessToken;
     }
 
     /**
      * Build URL with query parameters
      */
-    _buildUrl(endpoint, params = {}) {
+    private _buildUrl(endpoint: string, params: Record<string, any> = {}): string {
         const url = new URL(endpoint, window.location.origin);
         
         // Always include access token
@@ -74,7 +99,7 @@ export class ApiClient {
         // Add other parameters
         Object.entries(params).forEach(([key, value]) => {
             if (value !== null && value !== undefined) {
-                url.searchParams.append(key, value);
+                url.searchParams.append(key, String(value));
             }
         });
 
@@ -84,7 +109,11 @@ export class ApiClient {
     /**
      * Generic request method with error handling
      */
-    async _request(method, endpoint, options = {}) {
+    private async _request<T = any>(
+        method: string, 
+        endpoint: string, 
+        options: RequestOptions = {}
+    ): Promise<T> {
         const { 
             params = {}, 
             headers = {}, 
@@ -104,7 +133,7 @@ export class ApiClient {
             requestHeaders['x-access-token'] = this.accessToken;
         }
 
-        const config = {
+        const config: RequestInit = {
             method,
             headers: requestHeaders,
             ...fetchOptions
@@ -114,7 +143,7 @@ export class ApiClient {
         if (body && method !== 'GET') {
             if (body instanceof FormData) {
                 // Remove Content-Type for FormData (let browser set it)
-                delete config.headers['Content-Type'];
+                delete (config.headers as Record<string, string>)['Content-Type'];
                 config.body = body;
             } else {
                 config.body = JSON.stringify(body);
@@ -133,7 +162,7 @@ export class ApiClient {
             const response = await Promise.race([
                 fetch(url, config),
                 timeoutPromise
-            ]);
+            ]) as Response;
 
             log.debug(`API Response: ${response.status} ${response.statusText}`);
 
@@ -148,7 +177,7 @@ export class ApiClient {
                     errorData = { error: errorBody || 'Unknown error' };
                 }
 
-                const error = new Error(errorData.error || `HTTP ${response.status}`);
+                const error = new Error(errorData.error || `HTTP ${response.status}`) as any;
                 error.status = response.status;
                 error.statusText = response.statusText;
                 error.data = errorData;
@@ -167,7 +196,7 @@ export class ApiClient {
             log.error(`API Error: ${method} ${endpoint}`, error);
             
             // Re-throw with context
-            const enhancedError = new Error(contextualError);
+            const enhancedError = new Error(contextualError) as any;
             enhancedError.originalError = error;
             enhancedError.endpoint = endpoint;
             enhancedError.method = method;
@@ -179,36 +208,36 @@ export class ApiClient {
     /**
      * GET request
      */
-    async get(endpoint, params = {}) {
-        return this._request('GET', endpoint, { params });
+    async get<T = any>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
+        return this._request<T>('GET', endpoint, { params });
     }
 
     /**
      * POST request
      */
-    async post(endpoint, body = null, options = {}) {
-        return this._request('POST', endpoint, { body, ...options });
+    async post<T = any>(endpoint: string, body: any = null, options: RequestOptions = {}): Promise<T> {
+        return this._request<T>('POST', endpoint, { body, ...options });
     }
 
     /**
      * PUT request
      */
-    async put(endpoint, body = null, options = {}) {
-        return this._request('PUT', endpoint, { body, ...options });
+    async put<T = any>(endpoint: string, body: any = null, options: RequestOptions = {}): Promise<T> {
+        return this._request<T>('PUT', endpoint, { body, ...options });
     }
 
     /**
      * PATCH request
      */
-    async patch(endpoint, body = null, options = {}) {
-        return this._request('PATCH', endpoint, { body, ...options });
+    async patch<T = any>(endpoint: string, body: any = null, options: RequestOptions = {}): Promise<T> {
+        return this._request<T>('PATCH', endpoint, { body, ...options });
     }
 
     /**
      * DELETE request
      */
-    async delete(endpoint, options = {}) {
-        return this._request('DELETE', endpoint, options);
+    async delete<T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+        return this._request<T>('DELETE', endpoint, options);
     }
 
     // === Photo API Methods ===
@@ -216,47 +245,51 @@ export class ApiClient {
     /**
      * Get all photos
      */
-    async getPhotos() {
-        return this.get(CONFIG.API.ENDPOINTS.PHOTOS);
+    async getPhotos(): Promise<Photo[]> {
+        return this.get<Photo[]>(CONFIG.API.ENDPOINTS.PHOTOS);
     }
 
     /**
      * Upload a photo
      */
-    async uploadPhoto(file, tag = 'other') {
+    async uploadPhoto(file: File, tag: string = 'other'): Promise<UploadResponse> {
         const formData = new FormData();
         formData.append('photo', file);
         formData.append('tag', tag);
 
-        return this.post(CONFIG.API.ENDPOINTS.UPLOAD, formData);
+        return this.post<UploadResponse>(CONFIG.API.ENDPOINTS.UPLOAD, formData);
     }
 
     /**
      * Update photo people tags
      */
-    async updatePhotoPeople(photoId, people, faces = null) {
+    async updatePhotoPeople(
+        photoId: string, 
+        people: string[], 
+        faces: any[] | null = null
+    ): Promise<Photo> {
         const endpoint = CONFIG.API.ENDPOINTS.PEOPLE.replace(':id', photoId);
-        return this.patch(endpoint, { people, faces });
+        return this.patch<Photo>(endpoint, { people, faces });
     }
 
     /**
      * Delete a photo
      */
-    async deletePhoto(photoId) {
-        return this.delete(`${CONFIG.API.ENDPOINTS.PHOTOS}/${photoId}`);
+    async deletePhoto(photoId: string): Promise<void> {
+        return this.delete<void>(`${CONFIG.API.ENDPOINTS.PHOTOS}/${photoId}`);
     }
 
     /**
      * Get gallery statistics
      */
-    async getStats() {
+    async getStats(): Promise<any> {
         return this.get(CONFIG.API.ENDPOINTS.STATS);
     }
 
     /**
      * Health check
      */
-    async healthCheck() {
+    async healthCheck(): Promise<any> {
         return this.get(CONFIG.API.ENDPOINTS.HEALTH);
     }
 
@@ -265,9 +298,13 @@ export class ApiClient {
     /**
      * Upload multiple photos
      */
-    async uploadPhotos(files, tag = 'other', onProgress = null) {
-        const results = [];
-        const errors = [];
+    async uploadPhotos(
+        files: File[], 
+        tag: string = 'other', 
+        onProgress: ((current: number, total: number, filename: string) => void) | null = null
+    ) {
+        const results: UploadResponse[] = [];
+        const errors: { file: string; error: string }[] = [];
 
         for (let i = 0; i < files.length; i++) {
             try {
@@ -303,8 +340,12 @@ export class ApiClient {
     /**
      * Retry failed operations
      */
-    async retryOperation(operation, maxRetries = 3, delay = 1000) {
-        let lastError;
+    async retryOperation<T>(
+        operation: () => Promise<T>, 
+        maxRetries: number = 3, 
+        delay: number = 1000
+    ): Promise<T> {
+        let lastError: any;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {

@@ -3,7 +3,39 @@
  * Centralized state management with event-driven updates
  */
 
+import type { Photo, PhotoTag } from '../../src/types/index.js';
+
+interface AppState {
+    photos: Photo[];
+    filteredPhotos: Photo[];
+    currentPhotoIndex: number;
+    currentFilter: PhotoTag | 'all';
+    selectedTag: PhotoTag;
+    selectedPerson: string;
+    modalOpen: boolean;
+    uploadInProgress: boolean;
+    faceDetectionInProgress: boolean;
+    touchStartX: number;
+    touchEndX: number;
+    faceApiLoaded: boolean;
+    navigationHintShown: boolean;
+}
+
+interface StateChange {
+    timestamp: number;
+    key: string;
+    oldValue: any;
+    newValue: any;
+}
+
+type StateListener<T = any> = (newValue: T, oldValue: T) => void;
+type GlobalStateListener = (key: string, newValue: any, oldValue: any) => void;
+
 export class StateManager {
+    private state: AppState;
+    private listeners: Map<string, (StateListener | GlobalStateListener)[]>;
+    private history: StateChange[];
+
     constructor() {
         this.state = {
             // Photo data
@@ -39,17 +71,17 @@ export class StateManager {
     /**
      * Get current state or specific property
      */
-    get(key) {
+    get<K extends keyof AppState>(key?: K): K extends undefined ? AppState : AppState[K] {
         if (key) {
-            return this.state[key];
+            return this.state[key] as any;
         }
-        return { ...this.state }; // Return a copy to prevent mutations
+        return { ...this.state } as any;
     }
     
     /**
      * Set state and notify listeners
      */
-    set(key, value) {
+    set<K extends keyof AppState>(key: K, value: AppState[K]): void {
         const oldValue = this.state[key];
         this.state[key] = value;
         
@@ -73,26 +105,29 @@ export class StateManager {
     /**
      * Update multiple state properties at once
      */
-    update(updates) {
+    update(updates: Partial<AppState>): void {
         Object.entries(updates).forEach(([key, value]) => {
-            this.set(key, value);
+            this.set(key as keyof AppState, value as any);
         });
     }
     
     /**
      * Subscribe to state changes
      */
-    subscribe(key, callback) {
-        if (!this.listeners.has(key)) {
-            this.listeners.set(key, []);
+    subscribe<K extends keyof AppState>(
+        key: K | '*', 
+        callback: K extends '*' ? GlobalStateListener : StateListener<AppState[K]>
+    ): () => void {
+        if (!this.listeners.has(key as string)) {
+            this.listeners.set(key as string, []);
         }
-        this.listeners.get(key).push(callback);
+        this.listeners.get(key as string)!.push(callback as any);
         
         // Return unsubscribe function
         return () => {
-            const callbacks = this.listeners.get(key);
+            const callbacks = this.listeners.get(key as string);
             if (callbacks) {
-                const index = callbacks.indexOf(callback);
+                const index = callbacks.indexOf(callback as any);
                 if (index > -1) {
                     callbacks.splice(index, 1);
                 }
@@ -103,12 +138,12 @@ export class StateManager {
     /**
      * Notify listeners of state changes
      */
-    notify(key, newValue, oldValue) {
-        const callbacks = this.listeners.get(key);
+    private notify<K extends keyof AppState>(key: K, newValue: AppState[K], oldValue: AppState[K]): void {
+        const callbacks = this.listeners.get(key as string);
         if (callbacks) {
             callbacks.forEach(callback => {
                 try {
-                    callback(newValue, oldValue);
+                    (callback as StateListener)(newValue, oldValue);
                 } catch (error) {
                     console.error(`Error in state listener for ${key}:`, error);
                 }
@@ -120,7 +155,7 @@ export class StateManager {
         if (globalCallbacks) {
             globalCallbacks.forEach(callback => {
                 try {
-                    callback(key, newValue, oldValue);
+                    (callback as GlobalStateListener)(key as string, newValue, oldValue);
                 } catch (error) {
                     console.error('Error in global state listener:', error);
                 }
@@ -163,7 +198,7 @@ export class StateManager {
         };
         
         Object.entries(initialState).forEach(([key, value]) => {
-            this.set(key, value);
+            this.set(key as keyof AppState, value as any);
         });
     }
     
@@ -193,7 +228,7 @@ export class StateManager {
                 const persistentData = JSON.parse(saved);
                 Object.entries(persistentData).forEach(([key, value]) => {
                     if (this.state.hasOwnProperty(key)) {
-                        this.state[key] = value;
+                        (this.state as any)[key] = value;
                     }
                 });
             }
