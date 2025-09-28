@@ -36,6 +36,25 @@ A beautiful, mobile-first web application for sharing wedding photos with friend
    ```
 5. **Access the app**: Look for the access URL and token in the console output
 
+## 🛠️ Development Commands
+
+### Basic Commands
+```bash
+npm start          # Start the server
+npm run dev        # Start development server (same as start)
+npm run clean      # Clear uploaded photos and database
+```
+
+### CSS Development Tools
+```bash
+npm run css:list     # List all CSS files with sizes
+npm run css:analyze  # Analyze CSS for potential issues
+npm run css:component <name>  # Create new CSS component
+npm run css:utility <name>    # Create new CSS utility file
+```
+
+For detailed CSS development guidance, see [`docs/CSS_DEVELOPMENT.md`](docs/CSS_DEVELOPMENT.md).
+
 ## 🔑 Access Control
 
 The app uses a unique access token for security. When you start the server, you'll see output like:
@@ -131,13 +150,23 @@ For internet-wide access, deploy to platforms like:
 ```
 wedding-photo-app/
 ├── public/              # Frontend files
+│   ├── css/            # Modular CSS architecture
+│   │   ├── base/       # Foundation styles (reset, tokens, typography)
+│   │   ├── utilities/  # Utility classes (spacing, layout, visual)
+│   │   ├── layout/     # Layout components
+│   │   ├── components/ # UI components
+│   │   └── main.css    # CSS entry point
+│   ├── js/             # Modular JavaScript (in development)
 │   ├── index.html      # Main HTML file
-│   ├── styles.css      # CSS styles
-│   ├── script.js       # JavaScript functionality
+│   ├── script.js       # JavaScript functionality (legacy)
 │   └── manifest.json   # PWA manifest
 ├── server/             # Backend files
 │   ├── index.js        # Express server
 │   └── photos.json     # Photo database (auto-generated)
+├── scripts/            # Development tools
+│   └── css-utils.js    # CSS architecture management
+├── docs/               # Documentation
+│   └── CSS_DEVELOPMENT.md  # CSS development guide
 ├── uploads/            # Uploaded photos (auto-generated)
 ├── package.json        # Node.js dependencies
 ├── .gitignore         # Git ignore rules
@@ -155,10 +184,13 @@ wedding-photo-app/
 
 ### Colors and Styling
 
-Edit `public/styles.css` to customize:
-- Color scheme (search for `#e8b4a0` and `#d4a574`)
-- Fonts and typography
-- Layout and spacing
+The app uses a modular CSS architecture. To customize:
+
+- **Design tokens**: Edit `public/css/base/tokens.css` for colors, spacing, typography
+- **Components**: Modify individual component files in `public/css/components/`
+- **Create new styles**: Use the CSS utilities: `npm run css:component <name>`
+
+See [`docs/CSS_DEVELOPMENT.md`](docs/CSS_DEVELOPMENT.md) for detailed guidance.
 
 ### Wedding Details
 

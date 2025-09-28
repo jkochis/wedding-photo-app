@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Test - Wedding Photos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Wedding Photo App - Module Integration Test</h1>
+        <div id="test-results">
+            <div class="test-result info">Running integration tests...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        const testResults = document.getElementById('test-results');
+
+        function addResult(message, type = 'info') {
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.textContent = message;
+            testResults.appendChild(result);
+        }
+
+        function addDetailedResult(title, data, type = 'info') {
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = `
+                <strong>${title}</strong>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            testResults.appendChild(result);
+        }
+
+        async function runTests() {
+            testResults.innerHTML = '<div class="test-result info">Starting module integration tests...</div>';
+
+            try {
+                // Test 1: Module imports
+                addResult('Testing module imports...', 'info');
+                
+                const { CONFIG } = await import('./js/config.js');
+                addResult('✓ Config module imported successfully', 'success');
+
+                const { log } = await import('./js/logger.js');
+                addResult('✓ Logger module imported successfully', 'success');
+
+                const { state } = await import('./js/state.js');
+                addResult('✓ State module imported successfully', 'success');
+
+                const Utils = await import('./js/utils.js');
+                addResult('✓ Utils module imported successfully', 'success');
+
+                const apiClient = await import('./js/api-client.js');
+                addResult('✓ API Client module imported successfully', 'success');
+
+                const photoManager = await import('./js/photo-manager.js');
+                addResult('✓ Photo Manager module imported successfully', 'success');
+
+                const faceDetection = await import('./js/face-detection.js');
+                addResult('✓ Face Detection module imported successfully', 'success');
+
+                const uploadManager = await import('./js/upload-manager.js');
+                addResult('✓ Upload Manager module imported successfully', 'success');
+
+                const filterManager = await import('./js/filter-manager.js');
+                addResult('✓ Filter Manager module imported successfully', 'success');
+
+                const modalManager = await import('./js/modal-manager.js');
+                addResult('✓ Modal Manager module imported successfully', 'success');
+
+                // Test 2: Main app import
+                const app = await import('./js/main.js');
+                addResult('✓ Main app module imported successfully', 'success');
+
+                // Test 3: Configuration validation
+                addDetailedResult('Configuration Status', {
+                    apiEndpoints: CONFIG.API.ENDPOINTS,
+                    uploadLimits: {
+                        maxFileSize: CONFIG.UPLOAD.MAX_FILE_SIZE,
+                        maxBatch: CONFIG.UPLOAD.MAX_BATCH_SIZE
+                    },
+                    features: CONFIG.FEATURES
+                }, 'info');
+
+                // Test 4: Wait for app initialization and check status
+                addResult('Waiting for app initialization...', 'info');
+                
+                // Give the app some time to initialize
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                if (window.app) {
+                    const appStatus = window.app.getStatus();
+                    addDetailedResult('App Status', appStatus, appStatus.initialized ? 'success' : 'error');
+                    
+                    if (appStatus.initialized) {
+                        const stats = window.app.getStats();
+                        addDetailedResult('App Statistics', stats, 'info');
+                    }
+                } else {
+                    addResult('⚠ App not available on global scope', 'error');
+                }
+
+                // Test 5: Check for any JavaScript errors
+                let errorCount = 0;
+                window.addEventListener('error', (e) => {
+                    errorCount++;
+                    addResult(`❌ JavaScript Error: ${e.message}`, 'error');
+                });
+
+                setTimeout(() => {
+                    if (errorCount === 0) {
+                        addResult('✓ No JavaScript errors detected', 'success');
+                    }
+                    
+                    addResult(`Integration test completed. ${errorCount === 0 ? 'All tests passed!' : `${errorCount} errors found.`}`, 
+                             errorCount === 0 ? 'success' : 'error');
+                }, 1000);
+
+            } catch (error) {
+                addResult(`❌ Integration test failed: ${error.message}`, 'error');
+                console.error('Integration test error:', error);
+            }
+        }
+
+        // Start tests
+        runTests();
+    </script>
+</body>
+</html>

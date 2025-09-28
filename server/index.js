@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Access token validation middleware
 const validateAccess = (req, res, next) => {
-    const token = req.query.token || req.headers['x-access-token'] || req.body.token;
+    const token = req.query.token || req.headers['x-access-token'] || (req.body && req.body.token);
     
     if (!token || token !== ACCESS_TOKEN) {
         return res.status(401).json({ 
@@ -34,15 +34,6 @@ const validateAccess = (req, res, next) => {
 app.use('/uploads', (req, res, next) => {
     validateAccess(req, res, next);
 }, express.static(path.join(__dirname, '../uploads')));
-
-// Serve public files (HTML, CSS, JS) with access token validation
-app.use('/', (req, res, next) => {
-    // Allow access to root and API endpoints without token for initial validation
-    if (req.path === '/' || req.path.startsWith('/api/')) {
-        return next();
-    }
-    validateAccess(req, res, next);
-}, express.static(path.join(__dirname, '../public')));
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -65,7 +56,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
+        fileSize: 25 * 1024 * 1024, // 25MB limit for modern phone photos
     },
     fileFilter: (req, file, cb) => {
         // Only allow image files
@@ -86,6 +77,22 @@ async function loadPhotos() {
     try {
         const data = await fs.readFile(photosFilePath, 'utf8');
         photos = JSON.parse(data);
+        
+        // Update photo URLs with current token
+        let urlsUpdated = false;
+        photos.forEach(photo => {
+            const expectedUrl = `/uploads/${photo.filename}?token=${ACCESS_TOKEN}`;
+            if (photo.url !== expectedUrl) {
+                photo.url = expectedUrl;
+                urlsUpdated = true;
+            }
+        });
+        
+        // Save updated URLs if needed
+        if (urlsUpdated) {
+            await savePhotos();
+            console.log('Updated photo URLs with current token');
+        }
     } catch (error) {
         console.log('No existing photos file found, starting fresh');
         photos = [];
@@ -126,7 +133,14 @@ app.get('/api/photos', validateAccess, (req, res) => {
 // API to upload photos
 app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res) => {
     try {
+        console.log('Upload request received:', {
+            hasFile: !!req.file,
+            body: req.body,
+            contentType: req.get('Content-Type')
+        });
+        
         if (!req.file) {
+            console.log('No file in request');
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
@@ -138,6 +152,8 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
             originalName: req.file.originalname,
             url: `/uploads/${req.file.filename}?token=${ACCESS_TOKEN}`,
             tag: tag,
+            people: [], // Array of people tags
+            faces: [], // Face detection data
             size: req.file.size,
             uploadedAt: new Date().toISOString(),
             mimetype: req.file.mimetype
@@ -184,6 +200,28 @@ app.delete('/api/photos/:id', validateAccess, async (req, res) => {
     }
 });
 
+// API to update people tags and face data
+app.patch('/api/photos/:id/people', validateAccess, async (req, res) => {
+    try {
+        const photoId = req.params.id;
+        const { people, faces } = req.body;
+        
+        const photo = photos.find(p => p.id === photoId);
+        if (!photo) {
+            return res.status(404).json({ error: 'Photo not found' });
+        }
+        
+        if (people !== undefined) photo.people = people;
+        if (faces !== undefined) photo.faces = faces;
+        
+        await savePhotos();
+        res.json(photo);
+    } catch (error) {
+        console.error('Update people error:', error);
+        res.status(500).json({ error: 'Failed to update people tags' });
+    }
+});
+
 // API to get gallery stats
 app.get('/api/stats', validateAccess, (req, res) => {
     const stats = {
@@ -213,12 +251,30 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Serve static assets (CSS, JS, manifest.json, service worker) without token validation
+// Note: The main security is at the HTML page level and API endpoints
+app.use('/styles.css', express.static(path.join(__dirname, '../public/styles.css')));
+app.use('/script.js', express.static(path.join(__dirname, '../public/script.js')));
+app.use('/js', express.static(path.join(__dirname, '../public/js')));
+app.use('/test-integration.html', express.static(path.join(__dirname, '../public/test-integration.html')));
+app.use('/manifest.json', express.static(path.join(__dirname, '../public/manifest.json')));
+app.use('/sw.js', express.static(path.join(__dirname, '../public/sw.js')));
+app.use('/favicon.ico', (req, res) => {
+    res.status(204).end(); // No favicon, return empty response
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
+        console.log('Multer error:', error.code, error.message);
         if (error.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+            return res.status(400).json({ error: 'File too large. Maximum size is 25MB.' });
         }
+        return res.status(400).json({ error: `Upload error: ${error.message}` });
+    }
+    
+    if (error.message && error.message.includes('Only image files are allowed')) {
+        return res.status(400).json({ error: 'Only image files are allowed' });
     }
     
     console.error('Server error:', error);

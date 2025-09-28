@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wedding Photos</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/main.css">
     <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js"></script>
     <meta name="theme-color" content="#e8b4a0">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Wedding Photos">
 </head>
@@ -44,11 +46,23 @@
         <section class="filter-section">
             <div class="filter-container">
                 <h3>View Photos</h3>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-filter="all">All Photos</button>
-                    <button class="filter-btn" data-filter="wedding">Wedding</button>
-                    <button class="filter-btn" data-filter="reception">Reception</button>
-                    <button class="filter-btn" data-filter="other">Other</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>By Category:</label>
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" data-filter="all">All Photos</button>
+                            <button class="filter-btn" data-filter="wedding">Wedding</button>
+                            <button class="filter-btn" data-filter="reception">Reception</button>
+                            <button class="filter-btn" data-filter="other">Other</button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label for="peopleFilter">By Person:</label>
+                        <select id="peopleFilter" class="people-filter-select">
+                            <option value="">All People</option>
+                            <!-- Dynamic options will be added here -->
+                        </select>
+                    </div>
                 </div>
             </div>
         </section>
@@ -72,10 +86,18 @@
         <div class="modal" id="photoModal">
             <div class="modal-content">
                 <span class="close" id="closeModal">&times;</span>
-                <img class="modal-image" id="modalImage" src="" alt="Wedding photo">
+                <button class="nav-btn prev-btn" id="prevPhoto">‹</button>
+                <button class="nav-btn next-btn" id="nextPhoto">›</button>
+                <div class="photo-counter" id="photoCounter">1 / 1</div>
+                <div class="image-container">
+                    <img class="modal-image" id="modalImage" src="" alt="Wedding photo">
+                    <canvas class="face-overlay" id="faceOverlay"></canvas>
+                    <button class="detect-faces-btn" id="detectFacesBtn">🧑‍🤝‍🧑 Detect People</button>
+                </div>
                 <div class="modal-info">
                     <div class="photo-tag" id="modalTag"></div>
                     <div class="photo-date" id="modalDate"></div>
+                    <div class="people-tags" id="peopleTags"></div>
                 </div>
             </div>
         </div>
@@ -89,6 +111,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,215 @@
+/**
+ * Upload Component
+ * Photo upload interface styles
+ */
+
+.upload-section {
+  padding: var(--space-2xl) var(--space-md);
+}
+
+.upload-container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.upload-area {
+  position: relative;
+  border: 3px dashed var(--color-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+  background: var(--color-bg-card);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  margin-bottom: var(--space-lg);
+  backdrop-filter: blur(10px);
+}
+
+.upload-area:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-card);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.upload-area.dragover {
+  border-color: var(--color-primary);
+  background: rgba(232, 180, 160, 0.1);
+  transform: scale(1.02);
+}
+
+.upload-icon {
+  font-size: var(--font-size-4xl);
+  margin-bottom: var(--space-md);
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.upload-area h3 {
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.upload-area p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+#fileInput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Tag Selection */
+.tag-selection {
+  text-align: center;
+}
+
+.tag-selection label {
+  display: block;
+  margin-bottom: var(--space-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+}
+
+.tag-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tag-btn {
+  padding: var(--space-md) var(--space-lg);
+  border: 2px solid var(--color-secondary);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-normal);
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tag-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.tag-btn:hover::before {
+  left: 100%;
+}
+
+.tag-btn:hover {
+  background: var(--color-bg-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.tag-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Upload Progress */
+.upload-progress {
+  position: fixed;
+  bottom: var(--space-md);
+  left: var(--space-md);
+  right: var(--space-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(10px);
+}
+
+.upload-progress.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+  width: 0%;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .upload-section {
+    padding: var(--space-xl) var(--space-sm);
+  }
+  
+  .upload-area {
+    padding: var(--space-xl) var(--space-md);
+  }
+  
+  .upload-icon {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .tag-btn {
+    min-width: 80px;
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .upload-progress {
+    left: var(--space-sm);
+    right: var(--space-sm);
+    bottom: var(--space-sm);
+    padding: var(--space-md);
+  }
+}

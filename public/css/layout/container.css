@@ -1,0 +1,48 @@
+/**
+ * Layout Components
+ * Main layout containers and app structure
+ */
+
+/* App Container */
+#app {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Section Base Styles */
+.section {
+  padding: var(--space-2xl) var(--space-md);
+}
+
+/* Container Base Styles */
+.container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+.container-sm {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+.container-xs {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section {
+    padding: var(--space-xl) var(--space-sm);
+  }
+  
+  .container,
+  .container-sm,
+  .container-xs {
+    padding: 0 var(--space-sm);
+  }
+}

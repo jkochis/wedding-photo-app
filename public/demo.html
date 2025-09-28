@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Photos - Enhanced Design Demo</title>
+    <link rel="stylesheet" href="styles-enhanced.css">
+    <style>
+        .demo-section {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--color-bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .demo-title {
+            margin-bottom: var(--space-lg);
+            color: var(--color-text);
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+        
+        .feature-card {
+            background: var(--color-bg-primary);
+            padding: var(--space-lg);
+            border-radius: var(--radius-md);
+            border: 2px solid var(--color-secondary);
+        }
+        
+        .demo-skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: var(--space-md);
+            margin: var(--space-lg) 0;
+        }
+        
+        .demo-skeleton {
+            aspect-ratio: 1;
+            border-radius: var(--radius-lg);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">💕 Enhanced Wedding Photos 💕</h1>
+            <p class="subtitle">Showcasing the new modern design features</p>
+        </header>
+
+        <div style="padding: 2rem;">
+            <!-- Theme Demo Section -->
+            <section class="demo-section">
+                <h2 class="demo-title">🌙 Dark Mode & Theme Toggle</h2>
+                <p style="margin-bottom: var(--space-lg);">The app now features a beautiful dark mode with smooth transitions. Click the theme toggle button to switch between light and dark themes.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🎨 CSS Custom Properties</h3>
+                        <p>Design tokens for consistent theming across light and dark modes</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>💾 Theme Persistence</h3>
+                        <p>Your theme preference is saved and respects system settings</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>✨ Smooth Transitions</h3>
+                        <p>Elegant animations when switching between themes</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Skeleton Loading Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">💀 Loading Skeletons</h2>
+                <p style="margin-bottom: var(--space-lg);">Enhanced loading states with shimmer animations for better user experience during photo loading.</p>
+                
+                <div class="demo-skeleton-grid">
+                    <div class="demo-skeleton photo-skeleton"></div>
+                    <div class="demo-skeleton photo-skeleton"></div>
+                    <div class="demo-skeleton photo-skeleton"></div>
+                    <div class="demo-skeleton photo-skeleton"></div>
+                    <div class="demo-skeleton upload-skeleton">
+                        <div class="upload-indicator">📤</div>
+                    </div>
+                    <div class="demo-skeleton upload-skeleton">
+                        <div class="upload-indicator">📤</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enhanced Interactions -->
+            <section class="demo-section">
+                <h2 class="demo-title">🎯 Enhanced Interactions</h2>
+                <p style="margin-bottom: var(--space-lg);">Modern micro-interactions and improved hover states for better user engagement.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🎨 Backdrop Filters</h3>
+                        <p>Modern glass-morphism effects with backdrop blur</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎭 Advanced Animations</h3>
+                        <p>Sophisticated keyframe animations and transitions</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📱 Touch Optimized</h3>
+                        <p>Enhanced touch targets and mobile interactions</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Button Styles Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">🔘 Enhanced Buttons & Controls</h2>
+                <p style="margin-bottom: var(--space-lg);">Updated button styles with better accessibility and visual feedback.</p>
+                
+                <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-lg);">
+                    <button class="tag-btn active">👰 Wedding</button>
+                    <button class="tag-btn">🎉 Reception</button>
+                    <button class="tag-btn">📷 Other</button>
+                </div>
+                
+                <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
+                    <button class="filter-btn active">All Photos</button>
+                    <button class="filter-btn">Wedding</button>
+                    <button class="filter-btn">Reception</button>
+                    <button class="filter-btn">Other</button>
+                </div>
+            </section>
+
+            <!-- Accessibility Features -->
+            <section class="demo-section">
+                <h2 class="demo-title">♿ Accessibility Improvements</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🎯 Focus Styles</h3>
+                        <p>Enhanced focus indicators for keyboard navigation</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔊 Reduced Motion</h3>
+                        <p>Respects prefers-reduced-motion user preference</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔍 High Contrast</h3>
+                        <p>Better contrast ratios and high contrast mode support</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📱 Responsive Design</h3>
+                        <p>Improved mobile and tablet experiences</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Color Palette Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">🎨 Design System</h2>
+                <p style="margin-bottom: var(--space-lg);">Consistent design tokens and color palette for the wedding theme.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--space-md);">
+                    <div style="background: var(--color-primary); height: 60px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold);">Primary</div>
+                    <div style="background: var(--color-secondary); height: 60px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold);">Secondary</div>
+                    <div style="background: var(--color-success); height: 60px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold);">Success</div>
+                    <div style="background: var(--color-error); height: 60px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold);">Error</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module">
+        import themeManager from './js/theme-manager.js';
+        
+        // Initialize theme manager for demo
+        // It will automatically create the theme toggle button
+        
+        // Add some demo interactivity
+        document.addEventListener('DOMContentLoaded', () => {
+            // Make buttons interactive
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (!button.classList.contains('theme-toggle')) {
+                    button.addEventListener('click', function() {
+                        // Toggle active state for demo
+                        const siblings = this.parentNode.querySelectorAll('button');
+                        siblings.forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

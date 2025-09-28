@@ -1,0 +1,37 @@
+/**
+ * Wedding Photo App - Main Stylesheet
+ * Modular CSS architecture with organized imports
+ */
+
+/* Base Styles - Foundation */
+@import 'base/tokens.css';    /* Design tokens and CSS custom properties */
+@import 'base/reset.css';     /* Modern CSS reset and normalization */
+@import 'base/typography.css'; /* Typography styles and text utilities */
+
+/* Layout - Structure */
+@import 'layout/container.css'; /* Layout containers and grid systems */
+
+/* Utilities - Helper Classes */
+@import 'utilities/spacing.css'; /* Margin and padding utilities */
+@import 'utilities/layout.css';  /* Flexbox, grid, and positioning utilities */
+@import 'utilities/visual.css';  /* Shadows, borders, colors, and visual effects */
+
+/* Components - UI Elements */
+@import 'components/header.css';  /* Header and theme toggle */
+@import 'components/upload.css';  /* File upload interface */
+@import 'components/filter.css';  /* Photo filtering controls */
+@import 'components/gallery.css'; /* Photo grid and gallery */
+@import 'components/modal.css';   /* Photo modal and viewer */
+
+/**
+ * CSS Import Order Explanation:
+ * 
+ * 1. Tokens - CSS custom properties must load first
+ * 2. Reset - Normalize browser defaults 
+ * 3. Typography - Base text styles
+ * 4. Layout - Structural elements
+ * 5. Utilities - Helper classes (can override components if needed)
+ * 6. Components - Specific UI components
+ * 
+ * This order ensures proper cascade and prevents specificity issues.
+ */

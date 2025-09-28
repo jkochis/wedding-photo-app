@@ -1,0 +1,155 @@
+/**
+ * Filter Component
+ * Photo filtering interface styles
+ */
+
+.filter-section {
+  padding: var(--space-md);
+  background: var(--color-bg-overlay);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.filter-container {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.filter-section h3 {
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.filter-row {
+  display: flex;
+  gap: var(--space-xl);
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.filter-group label {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-secondary);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-normal);
+  min-width: 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left var(--transition-slow);
+}
+
+.filter-btn:hover::before {
+  left: 100%;
+}
+
+.filter-btn:hover {
+  background: var(--color-bg-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* People Filter Select */
+.people-filter-select {
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-secondary);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  min-width: 120px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.people-filter-select:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.people-filter-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(232, 180, 160, 0.2);
+  outline: none;
+}
+
+.people-filter-select option {
+  background: var(--color-bg-card);
+  color: var(--color-text);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-section {
+    padding: var(--space-md) var(--space-sm);
+  }
+  
+  .filter-row {
+    gap: var(--space-md);
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .filter-buttons {
+    gap: var(--space-xs);
+  }
+  
+  .filter-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+    min-width: 70px;
+  }
+  
+  .people-filter-select {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+    min-width: 100px;
+  }
+}
