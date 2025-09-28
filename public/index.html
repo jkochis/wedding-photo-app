@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Photos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e8b4a0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Wedding Photos">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">💕 Wedding Photos 💕</h1>
+            <p class="subtitle">Share your beautiful memories from our special day</p>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📸</div>
+                    <h3>Upload Photos</h3>
+                    <p>Tap to select photos from your device</p>
+                    <input type="file" id="fileInput" multiple accept="image/*" capture="environment">
+                </div>
+                
+                <div class="tag-selection">
+                    <label>Tag this photo:</label>
+                    <div class="tag-buttons">
+                        <button class="tag-btn active" data-tag="wedding">👰 Wedding</button>
+                        <button class="tag-btn" data-tag="reception">🎉 Reception</button>
+                        <button class="tag-btn" data-tag="other">📷 Other</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filter Section -->
+        <section class="filter-section">
+            <div class="filter-container">
+                <h3>View Photos</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All Photos</button>
+                    <button class="filter-btn" data-filter="wedding">Wedding</button>
+                    <button class="filter-btn" data-filter="reception">Reception</button>
+                    <button class="filter-btn" data-filter="other">Other</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Photo Gallery -->
+        <section class="gallery-section">
+            <div class="gallery-container">
+                <div class="photo-grid" id="photoGrid">
+                    <!-- Photos will be dynamically inserted here -->
+                </div>
+                
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📱</div>
+                    <h3>No photos yet</h3>
+                    <p>Be the first to share a photo from the wedding!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Photo Modal -->
+        <div class="modal" id="photoModal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <img class="modal-image" id="modalImage" src="" alt="Wedding photo">
+                <div class="modal-info">
+                    <div class="photo-tag" id="modalTag"></div>
+                    <div class="photo-date" id="modalDate"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="upload-progress" id="uploadProgress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Uploading...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
