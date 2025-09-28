@@ -4,18 +4,31 @@
  */
 
 import { CONFIG } from './config.js';
+import type { LogLevel } from '../../src/types/index.js';
+
+interface LogEntry {
+    timestamp: string;
+    level: LogLevel;
+    message: string;
+    data: any;
+    stack?: string;
+}
 
 export class Logger {
+    private logs: LogEntry[];
+    private maxLogs: number;
+    private logLevel: LogLevel;
+
     constructor() {
         this.logs = [];
         this.maxLogs = 1000;
-        this.logLevel = 'info'; // 'debug', 'info', 'warn', 'error'
+        this.logLevel = 'info';
     }
 
     /**
      * Log levels enum
      */
-    static LEVELS = {
+    static LEVELS: Record<string, number> = {
         DEBUG: 0,
         INFO: 1,
         WARN: 2,
@@ -25,15 +38,15 @@ export class Logger {
     /**
      * Set logging level
      */
-    setLevel(level) {
+    setLevel(level: LogLevel): void {
         this.logLevel = level;
     }
 
     /**
      * Add log entry
      */
-    _addLog(level, message, data = null) {
-        const logEntry = {
+    private _addLog(level: LogLevel, message: string, data: any = null): LogEntry {
+        const logEntry: LogEntry = {
             timestamp: new Date().toISOString(),
             level,
             message,
@@ -65,61 +78,66 @@ export class Logger {
     /**
      * Debug logging
      */
-    debug(message, data) {
+    debug(message: string, data?: any): LogEntry | undefined {
         if (Logger.LEVELS[this.logLevel.toUpperCase()] <= Logger.LEVELS.DEBUG) {
             return this._addLog('debug', message, data);
         }
+        return undefined;
     }
 
     /**
      * Info logging
      */
-    info(message, data) {
+    info(message: string, data?: any): LogEntry | undefined {
         if (Logger.LEVELS[this.logLevel.toUpperCase()] <= Logger.LEVELS.INFO) {
             return this._addLog('info', message, data);
         }
+        return undefined;
     }
 
     /**
      * Warning logging
      */
-    warn(message, data) {
+    warn(message: string, data?: any): LogEntry | undefined {
         if (Logger.LEVELS[this.logLevel.toUpperCase()] <= Logger.LEVELS.WARN) {
             return this._addLog('warn', message, data);
         }
+        return undefined;
     }
 
     /**
      * Error logging
      */
-    error(message, data) {
+    error(message: string, data?: any): LogEntry {
         return this._addLog('error', message, data);
     }
 
     /**
      * Get recent logs
      */
-    getLogs(limit = 50) {
+    getLogs(limit: number = 50): LogEntry[] {
         return this.logs.slice(-limit);
     }
 
     /**
      * Clear all logs
      */
-    clearLogs() {
+    clearLogs(): void {
         this.logs = [];
     }
 
     /**
      * Export logs as JSON
      */
-    exportLogs() {
+    exportLogs(): string {
         return JSON.stringify(this.logs, null, 2);
     }
 }
 
 export class ErrorHandler {
-    constructor(logger) {
+    private logger: Logger;
+
+    constructor(logger?: Logger) {
         this.logger = logger || new Logger();
         this.setupGlobalErrorHandling();
     }

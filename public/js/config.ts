@@ -3,7 +3,9 @@
  * Centralized configuration for the entire application
  */
 
-export const CONFIG = {
+import type { AppConfig } from '../../src/types/index.js';
+
+export const CONFIG: AppConfig = {
     // API Configuration
     API: {
         BASE_URL: '',

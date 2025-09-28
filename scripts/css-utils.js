@@ -12,6 +12,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Types for JSDoc annotations
+// FileStats: { size: number, isDirectory(): boolean }
+// CSSAnalysisResult: { totalSize: number, fileCount: number, issues: string[] }
+// CommandType: 'component' | 'utility' | 'list' | 'analyze' | 'help'
+
 const CSS_DIR = path.join(__dirname, '../public/css');
 const COMPONENTS_DIR = path.join(CSS_DIR, 'components');
 const UTILITIES_DIR = path.join(CSS_DIR, 'utilities');

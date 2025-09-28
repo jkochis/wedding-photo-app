@@ -9,7 +9,7 @@ export class Utils {
     /**
      * Get URL parameters
      */
-    static getUrlParam(name) {
+    static getUrlParam(name: string): string | null {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(name);
     }
@@ -17,14 +17,14 @@ export class Utils {
     /**
      * Capitalize first letter of a string
      */
-    static capitalizeFirst(str) {
+    static capitalizeFirst(str: string): string {
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
     /**
      * Format file size in human readable format
      */
-    static formatFileSize(bytes) {
+    static formatFileSize(bytes: number): string {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -35,7 +35,7 @@ export class Utils {
     /**
      * Format date in a user-friendly way
      */
-    static formatDate(dateString) {
+    static formatDate(dateString: string): string {
         const date = new Date(dateString);
         return `Uploaded ${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
     }
@@ -43,50 +43,50 @@ export class Utils {
     /**
      * Validate if file is a supported image type
      */
-    static isValidImageFile(file) {
+    static isValidImageFile(file: File): boolean {
         return CONFIG.UPLOAD.SUPPORTED_TYPES.includes(file.type);
     }
 
     /**
      * Check if file size is within limits
      */
-    static isValidFileSize(file) {
+    static isValidFileSize(file: File): boolean {
         return file.size <= CONFIG.UPLOAD.MAX_FILE_SIZE;
     }
 
     /**
      * Generate unique ID
      */
-    static generateId() {
+    static generateId(): string {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
     /**
      * Debounce function calls
      */
-    static debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
+    static debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+        let timeout: ReturnType<typeof setTimeout>;
+        return function executedFunction(...args: Parameters<T>) {
             const later = () => {
                 clearTimeout(timeout);
                 func(...args);
             };
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
-        };
+        } as T;
     }
 
     /**
      * Wait for a specified amount of time
      */
-    static async wait(ms) {
+    static async wait(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
      * Create a promise that resolves when an image loads
      */
-    static waitForImageLoad(img) {
+    static waitForImageLoad(img: HTMLImageElement): Promise<void> {
         return new Promise((resolve) => {
             if (img.complete && img.naturalWidth > 0) {
                 resolve();
@@ -100,7 +100,7 @@ export class Utils {
     /**
      * Safe JSON parse with fallback
      */
-    static safeJsonParse(jsonString, fallback = null) {
+    static safeJsonParse<T = any>(jsonString: string, fallback: T | null = null): T | null {
         try {
             return JSON.parse(jsonString);
         } catch (error) {
@@ -112,7 +112,11 @@ export class Utils {
     /**
      * Create DOM element with properties
      */
-    static createElement(tag, properties = {}, children = []) {
+    static createElement(
+        tag: string, 
+        properties: Record<string, any> = {}, 
+        children: (string | Node)[] = []
+    ): HTMLElement {
         const element = document.createElement(tag);
         
         Object.entries(properties).forEach(([key, value]) => {
@@ -123,7 +127,7 @@ export class Utils {
             } else if (key === 'className') {
                 element.className = value;
             } else {
-                element[key] = value;
+                (element as any)[key] = value;
             }
         });
         

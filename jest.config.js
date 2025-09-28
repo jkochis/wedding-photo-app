@@ -3,22 +3,26 @@ export default {
   testEnvironment: 'jsdom',
   
   // Module file extensions
-  moduleFileExtensions: ['js', 'json'],
+  moduleFileExtensions: ['ts', 'js', 'json'],
   
-  // Transform files using babel-jest
+  // Transform files using babel-jest and ts-jest
   transform: {
-    '^.+\\.js$': 'babel-jest'
+    '^.+\\.js$': 'babel-jest',
+    '^.+\\.ts$': 'ts-jest'
   },
   
   // Module name mapping for imports
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/public/js/$1'
+    '^@/(.*)$': '<rootDir>/public/js/$1',
+    '^@types/(.*)$': '<rootDir>/src/types/$1'
   },
   
   // Test files patterns
   testMatch: [
     '<rootDir>/tests/**/*.test.js',
-    '<rootDir>/tests/**/*.spec.js'
+    '<rootDir>/tests/**/*.spec.js',
+    '<rootDir>/tests/**/*.test.ts',
+    '<rootDir>/tests/**/*.spec.ts'
   ],
   
   // Setup files to run before tests
@@ -29,7 +33,11 @@ export default {
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'public/js/**/*.js',
+    'public/js/**/*.ts',
+    'src/**/*.ts',
     '!public/js/main.js', // Exclude main entry point
+    '!**/*.test.js',
+    '!**/*.test.ts',
     '!**/node_modules/**'
   ],
   coverageReporters: [
