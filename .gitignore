@@ -48,3 +48,6 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+# Build artifacts
+dist/
+dist-static/
