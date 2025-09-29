@@ -1,22 +1,16 @@
-import express from 'express';
-import multer from 'multer';
-import cors from 'cors';
-import path from 'path';
-import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
-import dotenv from 'dotenv';
-import type { Request, Response, NextFunction } from 'express';
-import type { Photo, PhotoTag } from '../src/types/index.js';
-import { storageService } from './storage.js';
-import type { StorageInfo, StorageStatus } from './types.js';
-
-dotenv.config();
+const express = require('express');
+const multer = require('multer');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs').promises;
+const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
 const app = express();
-const PORT: number = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Generate a unique access token for this instance
-const ACCESS_TOKEN: string = process.env.ACCESS_TOKEN || uuidv4();
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN || uuidv4();
 
 // Middleware
 app.use(cors());
@@ -24,14 +18,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Access token validation middleware
-const validateAccess = (req: Request, res: Response, next: NextFunction): void => {
+const validateAccess = (req, res, next) => {
     const token = req.query.token || req.headers['x-access-token'] || (req.body && req.body.token);
     
     if (!token || token !== ACCESS_TOKEN) {
-        res.status(401).json({ 
+        return res.status(401).json({ 
             error: 'Access denied. Invalid or missing access token.' 
         });
-        return;
     }
     
     next();
@@ -70,17 +63,17 @@ const upload = multer({
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            cb(new Error('Only image files are allowed!') as any, false);
+            cb(new Error('Only image files are allowed!'), false);
         }
     }
 });
 
 // Data storage (in production, you'd want to use a proper database)
-let photos: Photo[] = [];
+let photos = [];
 const photosFilePath = path.join(__dirname, 'photos.json');
 
 // Load existing photos on server start
-async function loadPhotos(): Promise<void> {
+async function loadPhotos() {
     try {
         const data = await fs.readFile(photosFilePath, 'utf8');
         photos = JSON.parse(data);
@@ -107,7 +100,7 @@ async function loadPhotos(): Promise<void> {
 }
 
 // Save photos to file
-async function savePhotos(): Promise<void> {
+async function savePhotos() {
     try {
         await fs.writeFile(photosFilePath, JSON.stringify(photos, null, 2));
     } catch (error) {
@@ -118,15 +111,14 @@ async function savePhotos(): Promise<void> {
 // Routes
 
 // Root route with access validation
-app.get('/', (req: Request, res: Response): void => {
+app.get('/', (req, res) => {
     const token = req.query.token;
     
     if (!token || token !== ACCESS_TOKEN) {
-        res.status(401).json({
+        return res.status(401).json({
             error: 'Access denied. Please use the correct access link.',
             message: 'You need a valid access token to view this wedding photo gallery.'
         });
-        return;
     }
     
     // Serve the main HTML file
@@ -134,12 +126,12 @@ app.get('/', (req: Request, res: Response): void => {
 });
 
 // API to get all photos
-app.get('/api/photos', validateAccess, (req: Request, res: Response): void => {
+app.get('/api/photos', validateAccess, (req, res) => {
     res.json(photos);
 });
 
 // API to upload photos
-app.post('/api/upload', validateAccess, upload.single('photo'), async (req: Request, res: Response): Promise<void> => {
+app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res) => {
     try {
         console.log('Upload request received:', {
             hasFile: !!req.file,
@@ -149,46 +141,17 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req: Requ
         
         if (!req.file) {
             console.log('No file in request');
-            res.status(400).json({ error: 'No file uploaded' });
-            return;
+            return res.status(400).json({ error: 'No file uploaded' });
         }
 
         const { tag = 'other' } = req.body;
-        let photoUrl: string;
         
-        try {
-            // Try to upload to Google Cloud Storage first
-            const storageInfo = storageService.getStorageInfo();
-            if (storageInfo.configured) {
-                photoUrl = await storageService.uploadPhoto(req.file.path, req.file.filename);
-                console.log('🌤️  Photo uploaded to Google Cloud Storage');
-            } else {
-                // Fallback to local storage
-                photoUrl = await storageService.uploadToLocal(req.file.path, req.file.filename);
-                photoUrl = `${photoUrl}?token=${ACCESS_TOKEN}`;
-                console.log('📁 Photo stored locally (GCS not configured)');
-            }
-        } catch (cloudError) {
-            const errorMessage = cloudError instanceof Error ? cloudError.message : 'Unknown error';
-            console.warn('⚠️  Cloud storage failed, falling back to local:', errorMessage);
-            photoUrl = await storageService.uploadToLocal(req.file.path, req.file.filename);
-            photoUrl = `${photoUrl}?token=${ACCESS_TOKEN}`;
-        }
-        
-        // Clean up temporary file
-        try {
-            await fs.unlink(req.file.path);
-        } catch (unlinkError) {
-            const errorMessage = unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
-            console.warn('Could not clean up temp file:', errorMessage);
-        }
-        
-        const photo: Photo = {
+        const photo = {
             id: uuidv4(),
             filename: req.file.filename,
             originalName: req.file.originalname,
-            url: photoUrl,
-            tag: tag as PhotoTag,
+            url: `/uploads/${req.file.filename}?token=${ACCESS_TOKEN}`,
+            tag: tag,
             people: [],
             faces: [],
             size: req.file.size,
@@ -207,14 +170,13 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req: Requ
 });
 
 // API to delete a photo (optional, for admin purposes)
-app.delete('/api/photos/:id', validateAccess, async (req: Request, res: Response): Promise<void> => {
+app.delete('/api/photos/:id', validateAccess, async (req, res) => {
     try {
         const photoId = req.params.id;
         const photoIndex = photos.findIndex(p => p.id === photoId);
         
         if (photoIndex === -1) {
-            res.status(404).json({ error: 'Photo not found' });
-            return;
+            return res.status(404).json({ error: 'Photo not found' });
         }
 
         const photo = photos[photoIndex];
@@ -239,15 +201,14 @@ app.delete('/api/photos/:id', validateAccess, async (req: Request, res: Response
 });
 
 // API to update people tags and face data
-app.patch('/api/photos/:id/people', validateAccess, async (req: Request, res: Response): Promise<void> => {
+app.patch('/api/photos/:id/people', validateAccess, async (req, res) => {
     try {
         const photoId = req.params.id;
         const { people, faces } = req.body;
         
         const photo = photos.find(p => p.id === photoId);
         if (!photo) {
-            res.status(404).json({ error: 'Photo not found' });
-            return;
+            return res.status(404).json({ error: 'Photo not found' });
         }
         
         if (people !== undefined) photo.people = people;
@@ -283,39 +244,18 @@ app.get('/api/stats', validateAccess, (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    const storageInfo = storageService.getStorageInfo();
     res.json({ 
         status: 'healthy', 
         timestamp: new Date().toISOString(),
-        photos: photos.length,
-        storage: storageInfo
+        photos: photos.length 
     });
-});
-
-// Storage status endpoint
-app.get('/api/storage/status', validateAccess, async (req, res) => {
-    try {
-        const storageInfo = storageService.getStorageInfo();
-        const isConnected = storageInfo.configured ? await storageService.checkConnection() : false;
-        
-        res.json({
-            ...storageInfo,
-            connected: isConnected,
-            mode: storageInfo.configured && isConnected ? 'cloud' : 'local'
-        });
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({ 
-            error: 'Failed to check storage status',
-            details: errorMessage 
-        });
-    }
 });
 
 // Serve static assets (CSS, JS, manifest.json, service worker) without token validation
 // Note: The main security is at the HTML page level and API endpoints
 app.use('/styles.css', express.static(path.join(__dirname, '../public/styles.css')));
 app.use('/script.js', express.static(path.join(__dirname, '../public/script.js')));
+app.use('/css', express.static(path.join(__dirname, '../public/css')));
 app.use('/js', express.static(path.join(__dirname, '../public/js')));
 app.use('/test-integration.html', express.static(path.join(__dirname, '../public/test-integration.html')));
 app.use('/manifest.json', express.static(path.join(__dirname, '../public/manifest.json')));
@@ -325,7 +265,7 @@ app.use('/favicon.ico', (req, res) => {
 });
 
 // Error handling middleware
-app.use((error: any, req: Request, res: Response, next: NextFunction): void => {
+app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
         console.log('Multer error:', error.code, error.message);
         if (error.code === 'LIMIT_FILE_SIZE') {
@@ -353,28 +293,6 @@ app.use((req, res) => {
 // Start server
 async function startServer() {
     await loadPhotos();
-    
-    // Initialize storage service
-    const storageInfo = storageService.getStorageInfo();
-    console.log('🗺️  Storage configuration:', {
-        provider: storageInfo.provider,
-        bucket: storageInfo.bucket,
-        configured: storageInfo.configured
-    });
-    
-    if (storageInfo.configured) {
-        try {
-            const connected = await storageService.checkConnection();
-            if (!connected) {
-                console.log('📦 Will fallback to local storage');
-            }
-        } catch (error) {
-            console.warn('⚠️  Storage check failed, will use local fallback');
-        }
-    } else {
-        console.log('📁 Using local file storage (GCS not configured)');
-        console.log('   Set GCS_BUCKET_NAME and GOOGLE_CLOUD_PROJECT for cloud storage');
-    }
     
     app.listen(PORT, () => {
         console.log(`🎉 Wedding Photo App server running on port ${PORT}`);
