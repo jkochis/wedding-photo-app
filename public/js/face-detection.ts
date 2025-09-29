@@ -2,93 +2,154 @@
  * Wedding Photo App Face Detection Module
  * Handles face detection, face box rendering, and people tagging functionality
  */
+
 import { CONFIG } from './config.js';
 import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
+import type { Photo, FaceDetection as FaceDetectionType } from '../../src/types/index.js';
+
+// External Face API types (simplified)
+declare global {
+    const faceapi: {
+        nets: {
+            ssdMobilenetv1: { loadFromUri: (url: string) => Promise<any> };
+            faceLandmark68Net: { loadFromUri: (url: string) => Promise<any> };
+            faceRecognitionNet: { loadFromUri: (url: string) => Promise<any> };
+        };
+        detectAllFaces: (img: HTMLImageElement) => {
+            withFaceLandmarks: () => {
+                withFaceDescriptors: () => Promise<FaceApiDetection[]>;
+            };
+        };
+    };
+}
+
+interface FaceApiDetection {
+    detection: {
+        box: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        score: number;
+    };
+    landmarks: any;
+    descriptor: any;
+}
+
+interface DetectedFace extends FaceDetectionType {
+    id: string;
+    person: string | null;
+}
+
+interface FaceDetectionStatus {
+    initialized: boolean;
+    faceApiLoaded: boolean;
+    available: boolean;
+}
+
 export class FaceDetection {
-    faceApiLoaded;
-    isInitialized;
+    private faceApiLoaded: boolean;
+    private isInitialized: boolean;
+
     constructor() {
         this.faceApiLoaded = false;
         this.isInitialized = false;
+        
         // Defer initialization to allow Face API to load
         setTimeout(() => this.init(), 1000);
     }
+
     /**
      * Initialize face detection
      */
-    async init() {
-        if (this.isInitialized)
-            return;
+    public async init(): Promise<void> {
+        if (this.isInitialized) return;
+        
         log.info('Initializing Face Detection');
+        
         try {
             await this.initFaceAPI();
             this.setupEventListeners();
             this.isInitialized = true;
+            
             log.info('Face Detection initialized successfully', { loaded: this.faceApiLoaded });
-        }
-        catch (error) {
+        } catch (error) {
             log.error('Failed to initialize Face Detection', error);
         }
     }
+
     /**
      * Initialize Face API library
      */
-    async initFaceAPI() {
+    private async initFaceAPI(): Promise<void> {
         try {
             if (typeof faceapi === 'undefined') {
                 log.warn('Face API library not loaded, face detection will be disabled');
                 return;
             }
+            
             log.info('Loading Face API models...');
+            
             // Load face detection models from CDN
             const MODEL_URL = CONFIG.FACE_DETECTION.MODEL_URL;
+            
             await Promise.all([
                 faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
                 faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
             ]);
+            
             this.faceApiLoaded = true;
+            
             // Update state
             state.set('faceApiLoaded', true);
+            
             log.info('Face API loaded successfully');
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Failed to load Face API', error);
             this.faceApiLoaded = false;
             state.set('faceApiLoaded', false);
         }
     }
+
     /**
      * Setup event listeners for face detection UI
      */
-    setupEventListeners() {
+    private setupEventListeners(): void {
         const detectBtn = document.getElementById('detectFacesBtn');
+        
         if (detectBtn) {
             detectBtn.addEventListener('click', () => {
                 this.detectFacesInCurrentPhoto();
             });
         }
     }
+
     /**
      * Detect faces in an image element
      */
-    async detectFaces(imageElement) {
+    private async detectFaces(imageElement: HTMLImageElement): Promise<DetectedFace[]> {
         if (!this.faceApiLoaded || !imageElement) {
             log.warn('Face API not loaded or invalid image element');
             return [];
         }
+        
         try {
             log.info('Detecting faces in image', {
                 width: imageElement.naturalWidth,
                 height: imageElement.naturalHeight
             });
+            
             const detections = await faceapi
                 .detectAllFaces(imageElement)
                 .withFaceLandmarks()
                 .withFaceDescriptors();
-            const faces = detections.map((detection, index) => ({
+            
+            const faces: DetectedFace[] = detections.map((detection, index) => ({
                 id: `face-${Date.now()}-${index}`,
                 x: detection.detection.box.x,
                 y: detection.detection.box.y,
@@ -98,48 +159,61 @@ export class FaceDetection {
                 personName: undefined, // Will be set when user tags
                 person: null // Legacy property for compatibility
             }));
+            
             log.info(`Detected ${faces.length} faces`, faces);
+            
             return faces;
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Face detection failed', error);
             return [];
         }
     }
+
     /**
      * Detect faces in the currently displayed photo
      */
-    async detectFacesInCurrentPhoto() {
+    private async detectFacesInCurrentPhoto(): Promise<void> {
         if (!this.faceApiLoaded) {
             this.showNotification('Face detection is loading, please wait...', 'info');
             return;
         }
+        
         const currentPhotoIndex = state.get('currentPhotoIndex');
         const filteredPhotos = state.get('filteredPhotos');
+        
         if (!filteredPhotos || currentPhotoIndex >= filteredPhotos.length) {
             log.warn('No current photo for face detection');
             return;
         }
+        
         const photo = filteredPhotos[currentPhotoIndex];
-        const detectBtn = document.getElementById('detectFacesBtn');
-        const modalImage = document.getElementById('modalImage');
+        const detectBtn = document.getElementById('detectFacesBtn') as HTMLButtonElement | null;
+        const modalImage = document.getElementById('modalImage') as HTMLImageElement | null;
+        
         if (!modalImage) {
             log.error('Modal image element not found');
             return;
         }
+        
         // Update button state
         if (detectBtn) {
             detectBtn.disabled = true;
             detectBtn.textContent = 'Detecting...';
         }
+        
         try {
             // Ensure image is fully loaded
             await this.ensureImageLoaded(modalImage, photo.url);
+            
             log.info('Starting face detection for photo:', photo.id);
+            
             const faces = await this.detectFaces(modalImage);
+            
             if (faces.length > 0) {
                 // Update photo with detected faces
                 photo.faces = faces;
+                
                 // Update state
                 const photos = state.get('photos');
                 const photoIndex = photos.findIndex(p => p.id === photo.id);
@@ -147,23 +221,25 @@ export class FaceDetection {
                     photos[photoIndex].faces = faces;
                     state.set('photos', photos);
                 }
+                
                 // Draw face boxes with a small delay for rendering
                 setTimeout(() => {
                     this.drawFaceBoxes(faces, modalImage);
                 }, CONFIG.FACE_DETECTION.RENDER_DELAY);
+                
                 this.showNotification(`Found ${faces.length} face(s)! Click on faces to tag people.`, 'success');
+                
                 // Update photo on server
                 await this.updatePhotoOnServer(photo);
-            }
-            else {
+                
+            } else {
                 this.showNotification('No faces detected in this photo.', 'info');
             }
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Face detection failed', error);
             this.showNotification('Face detection failed. Please try again.', 'error');
-        }
-        finally {
+        } finally {
             // Restore button state
             if (detectBtn) {
                 detectBtn.disabled = false;
@@ -171,68 +247,82 @@ export class FaceDetection {
             }
         }
     }
+
     /**
      * Ensure image is fully loaded with proper dimensions
      */
-    ensureImageLoaded(imageElement, imageUrl) {
+    private ensureImageLoaded(imageElement: HTMLImageElement, imageUrl: string): Promise<void> {
         return new Promise((resolve, reject) => {
             if (imageElement.complete && imageElement.naturalWidth > 0) {
                 resolve();
                 return;
             }
+            
             const timeout = setTimeout(() => {
                 reject(new Error('Image load timeout'));
             }, CONFIG.FACE_DETECTION.LOAD_TIMEOUT);
+            
             imageElement.onload = () => {
                 clearTimeout(timeout);
                 resolve();
             };
+            
             imageElement.onerror = () => {
                 clearTimeout(timeout);
                 reject(new Error('Image failed to load'));
             };
+            
             // Force reload if needed
             if (!imageElement.src || imageElement.src !== imageUrl) {
                 imageElement.src = imageUrl;
             }
         });
     }
+
     /**
      * Draw face detection boxes on an image
      */
-    drawFaceBoxes(faces, imageElement) {
+    private drawFaceBoxes(faces: DetectedFace[], imageElement: HTMLImageElement): void {
         // Clear existing face boxes first
         this.clearFaceBoxes(imageElement);
+        
         const imageContainer = imageElement.parentElement;
+        
         if (!imageContainer) {
             log.error('Image container not found');
             return;
         }
+        
         log.info(`Drawing ${faces.length} face boxes`);
         log.debug('Image dimensions', {
             display: { width: imageElement.offsetWidth, height: imageElement.offsetHeight },
             natural: { width: imageElement.naturalWidth, height: imageElement.naturalHeight }
         });
+        
         faces.forEach((face, index) => {
             const faceBox = this.createFaceBox(face, index, imageElement);
             imageContainer.appendChild(faceBox);
         });
     }
+
     /**
      * Create a face box element
      */
-    createFaceBox(face, index, imageElement) {
+    private createFaceBox(face: DetectedFace, index: number, imageElement: HTMLImageElement): HTMLElement {
         const faceBox = document.createElement('div');
         faceBox.className = 'face-box';
         faceBox.dataset.faceId = face.id;
         faceBox.dataset.faceIndex = index.toString();
+        
         // Calculate relative positioning based on image dimensions
         const scaleX = imageElement.offsetWidth / imageElement.naturalWidth;
         const scaleY = imageElement.offsetHeight / imageElement.naturalHeight;
+        
         const adjustedX = face.x * scaleX;
         const adjustedY = face.y * scaleY;
         const adjustedWidth = face.width * scaleX;
         const adjustedHeight = face.height * scaleY;
+        
         // Apply face box styles
         const styles = CONFIG.FACE_DETECTION.BOX_STYLES;
         Object.assign(faceBox.style, {
@@ -248,94 +338,120 @@ export class FaceDetection {
             pointerEvents: styles.pointerEvents,
             background: styles.background
         });
+        
         // Add click handler for tagging
-        faceBox.addEventListener('click', (e) => {
+        faceBox.addEventListener('click', (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
             log.info('Face box clicked', { faceId: face.id, index });
             this.tagFace(face, index);
         });
+        
         // Add face label
         if (CONFIG.FACE_DETECTION.SHOW_LABELS) {
             const label = this.createFaceLabel(face, index);
             faceBox.appendChild(label);
         }
+        
         log.debug(`Face ${index} positioned`, {
             original: { x: face.x, y: face.y, width: face.width, height: face.height },
             adjusted: { x: adjustedX, y: adjustedY, width: adjustedWidth, height: adjustedHeight }
         });
+        
         return faceBox;
     }
+
     /**
      * Create a face label element
      */
-    createFaceLabel(face, index) {
+    private createFaceLabel(face: DetectedFace, index: number): HTMLElement {
         const label = document.createElement('div');
         label.className = 'face-label';
+        
         const labelStyles = CONFIG.FACE_DETECTION.LABEL_STYLES;
         Object.assign(label.style, labelStyles);
+        
         // Show person name if tagged, otherwise show face number
         label.textContent = face.person || `Face ${index + 1}`;
+        
         return label;
     }
+
     /**
      * Clear all face boxes from an image
      */
-    clearFaceBoxes(imageElement) {
+    public clearFaceBoxes(imageElement: HTMLImageElement): void {
         const imageContainer = imageElement.parentElement;
-        if (!imageContainer)
-            return;
+        
+        if (!imageContainer) return;
+        
         const existingBoxes = imageContainer.querySelectorAll('.face-box');
         existingBoxes.forEach(box => box.remove());
+        
         log.debug(`Cleared ${existingBoxes.length} existing face boxes`);
     }
+
     /**
      * Tag a detected face with a person's name
      */
-    async tagFace(face, faceIndex) {
+    private async tagFace(face: DetectedFace, faceIndex: number): Promise<void> {
         const personName = prompt('Who is this person?');
+        
         if (!personName || !personName.trim()) {
             return;
         }
+        
         const trimmedName = personName.trim();
+        
         try {
             const currentPhotoIndex = state.get('currentPhotoIndex');
             const filteredPhotos = state.get('filteredPhotos');
             const photo = filteredPhotos[currentPhotoIndex];
+            
             if (!photo) {
                 log.error('No current photo found for tagging');
                 return;
             }
+            
             // Update face with person name
             face.person = trimmedName;
+            
             // Initialize people array if needed
             if (!photo.people) {
                 photo.people = [];
             }
+            
             // Add person to photo's people list if not already there
             if (!photo.people.includes(trimmedName)) {
                 photo.people.push(trimmedName);
             }
+            
             // Update photo on server
             await this.updatePhotoOnServer(photo);
+            
             // Update people display
             this.updatePeopleDisplay(photo);
+            
             // Update people filter options
             this.updatePeopleFilterOptions();
+            
             // Update face box label
             this.updateFaceBoxLabel(face.id, trimmedName);
+            
             this.showNotification(`Tagged ${trimmedName}!`, 'success');
+            
             log.info('Face tagged successfully', { faceId: face.id, person: trimmedName });
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Failed to tag face', error);
             this.showNotification('Failed to save tag. Please try again.', 'error');
         }
     }
+
     /**
      * Update face box label with person name
      */
-    updateFaceBoxLabel(faceId, personName) {
+    private updateFaceBoxLabel(faceId: string, personName: string): void {
         const faceBox = document.querySelector(`[data-face-id="${faceId}"]`);
         if (faceBox) {
             const label = faceBox.querySelector('.face-label');
@@ -344,21 +460,24 @@ export class FaceDetection {
             }
         }
     }
+
     /**
      * Display existing face boxes for a photo
      */
-    displayExistingFaces(photo, imageElement) {
+    public displayExistingFaces(photo: Photo, imageElement: HTMLImageElement): void {
         if (!photo.faces || photo.faces.length === 0) {
             this.clearFaceBoxes(imageElement);
             return;
         }
+        
         // Clear existing boxes first
         this.clearFaceBoxes(imageElement);
+        
         // Add delay to ensure image is rendered
         setTimeout(() => {
             log.info('Displaying existing faces for photo:', photo.id);
             // Convert FaceDetection to DetectedFace for compatibility
-            const detectedFaces = photo.faces.map((face, index) => ({
+            const detectedFaces: DetectedFace[] = photo.faces.map((face, index) => ({
                 ...face,
                 id: `existing-face-${index}`,
                 person: face.personName || null
@@ -366,22 +485,28 @@ export class FaceDetection {
             this.drawFaceBoxes(detectedFaces, imageElement);
         }, CONFIG.FACE_DETECTION.RENDER_DELAY);
     }
+
     /**
      * Update people display in modal
      */
-    updatePeopleDisplay(photo) {
+    public updatePeopleDisplay(photo: Photo): void {
         const peopleTags = document.getElementById('peopleTags');
-        if (!peopleTags)
-            return;
+        
+        if (!peopleTags) return;
+        
         if (!photo.people || photo.people.length === 0) {
             peopleTags.innerHTML = '';
             return;
         }
-        peopleTags.innerHTML = photo.people.map(person => `<span class="person-tag">${person} <span class="remove-tag" data-photo-id="${photo.id}" data-person="${person}">×</span></span>`).join('');
+        
+        peopleTags.innerHTML = photo.people.map(person => 
+            `<span class="person-tag">${person} <span class="remove-tag" data-photo-id="${photo.id}" data-person="${person}">×</span></span>`
+        ).join('');
+        
         // Add event listeners for remove buttons
         peopleTags.querySelectorAll('.remove-tag').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.target;
+            btn.addEventListener('click', (e: Event) => {
+                const target = e.target as HTMLElement;
                 const photoId = target.dataset.photoId;
                 const person = target.dataset.person;
                 if (photoId && person) {
@@ -390,24 +515,29 @@ export class FaceDetection {
             });
         });
     }
+
     /**
      * Remove a person tag from a photo
      */
-    async removePerson(photoId, personName) {
+    private async removePerson(photoId: string, personName: string): Promise<void> {
         try {
             const photos = state.get('photos');
             const photo = photos.find(p => p.id === photoId);
+            
             if (!photo) {
                 log.error('Photo not found for person removal', { photoId });
                 return;
             }
+            
             // Initialize people array if needed
             if (!photo.people) {
                 photo.people = [];
                 return;
             }
+            
             // Remove person from people array
             photo.people = photo.people.filter(p => p !== personName);
+            
             // Remove person from face tags
             if (photo.faces) {
                 photo.faces.forEach(face => {
@@ -416,36 +546,44 @@ export class FaceDetection {
                     }
                 });
             }
+            
             // Update photo on server
             await this.updatePhotoOnServer(photo);
+            
             // Update displays
             this.updatePeopleDisplay(photo);
             this.updatePeopleFilterOptions();
+            
             this.showNotification(`Removed ${personName}`, 'info');
+            
             log.info('Person removed successfully', { photoId, person: personName });
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Failed to remove person', error);
             this.showNotification('Failed to remove person. Please try again.', 'error');
         }
     }
+
     /**
      * Update people filter dropdown options
      */
-    updatePeopleFilterOptions() {
-        const peopleFilter = document.getElementById('peopleFilter');
-        if (!peopleFilter)
-            return;
+    private updatePeopleFilterOptions(): void {
+        const peopleFilter = document.getElementById('peopleFilter') as HTMLSelectElement | null;
+        if (!peopleFilter) return;
+        
         const photos = state.get('photos');
+        
         // Get all unique people names from all photos
-        const allPeople = new Set();
-        photos.forEach((photo) => {
+        const allPeople = new Set<string>();
+        photos.forEach((photo: Photo) => {
             if (photo.people && Array.isArray(photo.people)) {
                 photo.people.forEach(person => allPeople.add(person));
             }
         });
+        
         // Clear existing options except "All People"
         peopleFilter.innerHTML = '<option value="">All People</option>';
+        
         // Add options for each person
         const sortedPeople = Array.from(allPeople).sort();
         sortedPeople.forEach(person => {
@@ -454,42 +592,49 @@ export class FaceDetection {
             option.textContent = `👤 ${person}`;
             peopleFilter.appendChild(option);
         });
+        
         log.debug('Updated people filter options', sortedPeople);
     }
+
     /**
      * Update photo data on server
      */
-    async updatePhotoOnServer(photo) {
+    private async updatePhotoOnServer(photo: Photo): Promise<void> {
         try {
-            await apiClient.updatePhotoPeople(photo.id, photo.people, photo.faces);
+            await apiClient.updatePhotoPeople(photo.id, photo.people, photo.faces as any);
+            
             log.info('Photo updated on server', { photoId: photo.id });
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Failed to update photo on server', error);
             throw error;
         }
     }
+
     /**
      * Update face detection button visibility
      */
-    updateButtonVisibility() {
+    public updateButtonVisibility(): void {
         const detectBtn = document.getElementById('detectFacesBtn');
         if (detectBtn) {
             detectBtn.style.display = this.faceApiLoaded ? 'block' : 'none';
         }
     }
+
     /**
      * Show notification to user
      */
-    showNotification(message, type = 'info') {
+    private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
         // This is a simple implementation - in a real app you might use a dedicated notification system
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        const colors = {
+        
+        const colors: Record<string, string> = {
             success: '#4CAF50',
             error: '#f44336',
             info: '#2196F3'
         };
+        
         notification.style.cssText = `
             position: fixed;
             top: 2rem;
@@ -505,11 +650,14 @@ export class FaceDetection {
             transition: transform 0.3s ease;
         `;
         notification.textContent = message;
+
         document.body.appendChild(notification);
+
         // Animate in
         setTimeout(() => {
             notification.style.transform = 'translateX(0)';
         }, 100);
+
         // Remove after 3 seconds
         setTimeout(() => {
             notification.style.transform = 'translateX(100%)';
@@ -520,16 +668,18 @@ export class FaceDetection {
             }, 300);
         }, 3000);
     }
+
     /**
      * Check if face detection is available
      */
-    isAvailable() {
+    public isAvailable(): boolean {
         return this.faceApiLoaded && this.isInitialized;
     }
+
     /**
      * Get face detection status
      */
-    getStatus() {
+    public getStatus(): FaceDetectionStatus {
         return {
             initialized: this.isInitialized,
             faceApiLoaded: this.faceApiLoaded,
@@ -537,7 +687,7 @@ export class FaceDetection {
         };
     }
 }
+
 // Create and export singleton instance
 export const faceDetection = new FaceDetection();
 export default faceDetection;
-//# sourceMappingURL=face-detection.js.map

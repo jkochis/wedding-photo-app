@@ -2,10 +2,14 @@
  * Wedding Photo App - Theme Manager
  * Handles dark/light mode switching and theme persistence
  */
+
+type Theme = 'light' | 'dark';
+
 export class ThemeManager {
-    currentTheme;
-    storageKey;
-    toggleButton;
+    private currentTheme: Theme;
+    private readonly storageKey: string;
+    private toggleButton: HTMLButtonElement | null;
+
     constructor() {
         this.currentTheme = 'light';
         this.storageKey = 'wedding-photo-theme';
@@ -15,7 +19,7 @@ export class ThemeManager {
     /**
      * Initialize theme manager
      */
-    init() {
+    private init(): void {
         // Load saved theme or detect system preference
         this.loadTheme();
         // Create theme toggle button
@@ -23,16 +27,16 @@ export class ThemeManager {
         // Listen for system theme changes
         this.listenForSystemThemeChanges();
     }
+
     /**
      * Load theme from storage or system preference
      */
-    loadTheme() {
+    private loadTheme(): void {
         // Check for saved theme
-        const savedTheme = localStorage.getItem(this.storageKey);
+        const savedTheme = localStorage.getItem(this.storageKey) as Theme | null;
         if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
             this.currentTheme = savedTheme;
-        }
-        else {
+        } else {
             // Check system preference
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 this.currentTheme = 'dark';
@@ -43,7 +47,7 @@ export class ThemeManager {
     /**
      * Apply theme to document
      */
-    applyTheme() {
+    private applyTheme(): void {
         document.documentElement.setAttribute('data-theme', this.currentTheme);
         // Update toggle button icon
         if (this.toggleButton) {
@@ -51,10 +55,11 @@ export class ThemeManager {
             this.toggleButton.title = `Switch to ${this.currentTheme === 'dark' ? 'light' : 'dark'} mode`;
         }
     }
+
     /**
      * Create theme toggle button
      */
-    createToggleButton() {
+    private createToggleButton(): void {
         this.toggleButton = document.createElement('button');
         this.toggleButton.className = 'theme-toggle';
         this.toggleButton.setAttribute('aria-label', 'Toggle theme');
@@ -63,8 +68,7 @@ export class ThemeManager {
         const app = document.getElementById('app');
         if (app) {
             app.insertBefore(this.toggleButton, app.firstChild);
-        }
-        else {
+        } else {
             document.body.appendChild(this.toggleButton);
         }
         this.applyTheme(); // Update button icon
@@ -72,7 +76,7 @@ export class ThemeManager {
     /**
      * Toggle between light and dark themes
      */
-    toggleTheme() {
+    public toggleTheme(): void {
         this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
         // Save to localStorage
         localStorage.setItem(this.storageKey, this.currentTheme);
@@ -85,10 +89,11 @@ export class ThemeManager {
         // Add transition effect
         this.addTransitionEffect();
     }
+
     /**
      * Add smooth transition effect when switching themes
      */
-    addTransitionEffect() {
+    private addTransitionEffect(): void {
         const transition = document.createElement('div');
         transition.style.cssText = `
             position: fixed;
@@ -119,10 +124,10 @@ export class ThemeManager {
     /**
      * Listen for system theme changes
      */
-    listenForSystemThemeChanges() {
+    private listenForSystemThemeChanges(): void {
         if (window.matchMedia) {
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            mediaQuery.addEventListener('change', (e) => {
+            mediaQuery.addEventListener('change', (e: MediaQueryListEvent) => {
                 // Only auto-switch if user hasn't manually set a preference
                 const hasManualPreference = localStorage.getItem(this.storageKey);
                 if (!hasManualPreference) {
@@ -132,31 +137,33 @@ export class ThemeManager {
             });
         }
     }
+
     /**
      * Get current theme
      */
-    getCurrentTheme() {
+    public getCurrentTheme(): Theme {
         return this.currentTheme;
     }
+
     /**
      * Set theme programmatically
      */
-    setTheme(theme) {
+    public setTheme(theme: string): void {
         if (theme === 'light' || theme === 'dark') {
             this.currentTheme = theme;
             localStorage.setItem(this.storageKey, this.currentTheme);
             this.applyTheme();
         }
     }
+
     /**
      * Reset to system preference
      */
-    resetToSystemPreference() {
+    public resetToSystemPreference(): void {
         localStorage.removeItem(this.storageKey);
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             this.currentTheme = 'dark';
-        }
-        else {
+        } else {
             this.currentTheme = 'light';
         }
         this.applyTheme();
@@ -165,5 +172,4 @@ export class ThemeManager {
 // Create singleton instance
 export const themeManager = new ThemeManager();
 export default themeManager;
-//# sourceMappingURL=theme-manager.js.map
 //# sourceMappingURL=theme-manager.js.map

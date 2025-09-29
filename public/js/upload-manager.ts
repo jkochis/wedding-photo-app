@@ -2,208 +2,278 @@
  * Wedding Photo App Upload Manager
  * Handles file upload processing, progress tracking, drag/drop, and batch uploads
  */
+
 import { CONFIG } from './config.js';
 import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
 import photoManager from './photo-manager.js';
 import Utils from './utils.js';
+import type { PhotoTag, Photo, UploadResponse } from '../../src/types/index.js';
+
+interface ValidationResult {
+    valid: boolean;
+    error?: string;
+}
+
+interface UploadQueueItem {
+    id: string;
+    file: File;
+    tag: PhotoTag;
+    resolve: (photo: Photo) => void;
+    reject: (error: Error) => void;
+}
+
+interface UploadStatus {
+    isUploading: boolean;
+    queueLength: number;
+    currentUploads: number;
+    selectedTag: PhotoTag;
+}
+
+interface UploadStats {
+    totalUploaded: number;
+    uploadedToday: number;
+    averageFileSize: number;
+    totalSize: number;
+}
+
 export class UploadManager {
-    isUploading;
-    uploadQueue;
-    currentUploads;
-    maxConcurrentUploads;
-    selectedTag;
+    private isUploading: boolean;
+    private uploadQueue: UploadQueueItem[];
+    private currentUploads: number;
+    private maxConcurrentUploads: number;
+    private selectedTag: PhotoTag;
+
     constructor() {
         this.isUploading = false;
         this.uploadQueue = [];
         this.currentUploads = 0;
         this.maxConcurrentUploads = CONFIG.UPLOAD.MAX_CONCURRENT;
         this.selectedTag = 'wedding'; // Default tag
+        
         this.init();
     }
+
     /**
      * Initialize upload manager
      */
-    init() {
+    init(): void {
         log.info('Initializing Upload Manager');
+        
         this.setupEventListeners();
         this.setupDragAndDrop();
+        
         // Subscribe to state changes
         state.subscribe('selectedTag', (newTag) => {
-            this.selectedTag = newTag;
+            this.selectedTag = newTag as PhotoTag;
         });
+        
         log.info('Upload Manager initialized');
     }
+
     /**
      * Setup event listeners for upload UI
      */
-    setupEventListeners() {
-        const fileInput = document.getElementById('fileInput');
+    private setupEventListeners(): void {
+        const fileInput = document.getElementById('fileInput') as HTMLInputElement;
         const uploadArea = document.getElementById('uploadArea');
         const tagButtons = document.querySelectorAll('.tag-btn');
+
         // File input change handler
         if (fileInput) {
             fileInput.addEventListener('change', (e) => {
-                const target = e.target;
+                const target = e.target as HTMLInputElement;
                 this.handleFileSelection(target.files);
             });
         }
+
         // Upload area click handler
         if (uploadArea) {
             uploadArea.addEventListener('click', () => {
                 fileInput?.click();
             });
         }
+
         // Tag selection handlers
         tagButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const target = e.target;
+                const target = e.target as HTMLElement;
                 // Update active tag button
                 tagButtons.forEach(b => b.classList.remove('active'));
                 target.classList.add('active');
+                
                 // Update selected tag
-                const tagValue = target.dataset.tag;
+                const tagValue = target.dataset.tag as PhotoTag;
                 this.selectedTag = tagValue;
                 state.set('selectedTag', this.selectedTag);
+                
                 log.debug('Tag selected:', this.selectedTag);
             });
         });
     }
+
     /**
      * Setup drag and drop functionality
      */
-    setupDragAndDrop() {
+    private setupDragAndDrop(): void {
         const uploadArea = document.getElementById('uploadArea');
+        
         if (!uploadArea) {
             log.warn('Upload area not found, drag and drop disabled');
             return;
         }
+
         // Prevent default drag behaviors
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             uploadArea.addEventListener(eventName, this.preventDefaults, false);
             document.body.addEventListener(eventName, this.preventDefaults, false);
         });
+
         // Highlight drop area when item is dragged over it
         ['dragenter', 'dragover'].forEach(eventName => {
             uploadArea.addEventListener(eventName, () => {
                 uploadArea.classList.add('drag-over');
             }, false);
         });
+
         ['dragleave', 'drop'].forEach(eventName => {
             uploadArea.addEventListener(eventName, () => {
                 uploadArea.classList.remove('drag-over');
             }, false);
         });
+
         // Handle dropped files
         uploadArea.addEventListener('drop', (e) => {
-            const dragEvent = e;
+            const dragEvent = e as DragEvent;
             const files = dragEvent.dataTransfer?.files;
             if (files) {
                 this.handleFileSelection(files);
             }
         }, false);
+
         log.debug('Drag and drop initialized');
     }
+
     /**
      * Prevent default drag behaviors
      */
-    preventDefaults(e) {
+    private preventDefaults(e: Event): void {
         e.preventDefault();
         e.stopPropagation();
     }
+
     /**
      * Handle file selection from input or drag/drop
      */
-    async handleFileSelection(files) {
+    private async handleFileSelection(files: FileList | null): Promise<void> {
         if (!files || files.length === 0) {
             return;
         }
+
         log.info(`Files selected for upload: ${files.length}`);
+
         // Convert FileList to Array and validate files
         const validFiles = [];
         const errors = [];
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const validation = this.validateFile(file);
+            
             if (validation.valid) {
                 validFiles.push(file);
-            }
-            else {
+            } else {
                 errors.push(`${file.name}: ${validation.error}`);
             }
         }
+
         // Show validation errors
         if (errors.length > 0) {
             this.showNotification(`Upload errors:\n${errors.join('\n')}`, 'error');
         }
+
         // Proceed with valid files
         if (validFiles.length > 0) {
             await this.uploadFiles(validFiles);
         }
     }
+
     /**
      * Validate a file for upload
      */
-    validateFile(file) {
+    private validateFile(file: File): ValidationResult {
         // Check file type
         if (!file.type.startsWith('image/')) {
             return { valid: false, error: 'Only image files are allowed' };
         }
+
         // Check file size
         if (file.size > CONFIG.UPLOAD.MAX_FILE_SIZE) {
             const maxSizeMB = CONFIG.UPLOAD.MAX_FILE_SIZE / (1024 * 1024);
             return { valid: false, error: `File too large (max ${maxSizeMB}MB)` };
         }
+
         // Check file extension
         const allowedTypes = CONFIG.UPLOAD.ALLOWED_TYPES;
         if (!allowedTypes.includes(file.type)) {
             return { valid: false, error: 'Unsupported file format' };
         }
+
         return { valid: true };
     }
+
     /**
      * Upload multiple files
      */
-    async uploadFiles(files) {
+    private async uploadFiles(files: File[]): Promise<void> {
         if (this.isUploading && this.uploadQueue.length + files.length > CONFIG.UPLOAD.MAX_BATCH_SIZE) {
             this.showNotification(`Maximum ${CONFIG.UPLOAD.MAX_BATCH_SIZE} files can be uploaded at once`, 'error');
             return;
         }
+
         // Add files to upload queue
         const uploadPromises = files.map(file => this.queueFileUpload(file));
+        
         log.info(`Starting upload of ${files.length} files`);
+        
         try {
             // Process uploads
             await this.processUploadQueue();
+            
             // Wait for all uploads to complete
             const results = await Promise.allSettled(uploadPromises);
+            
             // Process results
             const successful = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
+            
             if (successful > 0) {
                 this.showNotification(`Successfully uploaded ${successful} photo(s)!`, 'success');
+                
                 // Reload photos to show new uploads
                 await photoManager.loadPhotos();
             }
+            
             if (failed > 0) {
                 this.showNotification(`${failed} upload(s) failed`, 'error');
             }
+            
             log.info('Upload batch completed', { successful, failed });
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.error('Upload batch failed', error);
             this.showNotification('Upload failed. Please try again.', 'error');
-        }
-        finally {
+        } finally {
             this.hideUploadProgress();
             this.isUploading = false;
         }
     }
+
     /**
      * Queue a file for upload
      */
-    queueFileUpload(file) {
+    private queueFileUpload(file: File): Promise<Photo> {
         return new Promise((resolve, reject) => {
             this.uploadQueue.push({
                 file,
@@ -214,157 +284,199 @@ export class UploadManager {
             });
         });
     }
+
     /**
      * Process the upload queue
      */
-    async processUploadQueue() {
-        if (this.uploadQueue.length === 0)
-            return;
+    private async processUploadQueue(): Promise<void> {
+        if (this.uploadQueue.length === 0) return;
+        
         this.isUploading = true;
         this.currentUploads = 0;
+        
         // Show progress
         this.showUploadProgress('Preparing upload...', 0);
+        
         // Process uploads with concurrency limit
         const promises = [];
+        
         for (let i = 0; i < Math.min(this.maxConcurrentUploads, this.uploadQueue.length); i++) {
             promises.push(this.processNextUpload());
         }
+        
         await Promise.all(promises);
     }
+
     /**
      * Process the next upload in queue
      */
-    async processNextUpload() {
+    private async processNextUpload(): Promise<void> {
         while (this.uploadQueue.length > 0) {
             const uploadItem = this.uploadQueue.shift();
-            if (!uploadItem)
-                break;
+            if (!uploadItem) break;
+            
             try {
                 this.currentUploads++;
+                
                 // Update progress
                 const completed = this.currentUploads;
                 const total = this.currentUploads + this.uploadQueue.length;
                 const percentage = Math.round((completed / total) * 100);
+                
                 this.showUploadProgress(`Uploading ${uploadItem.file.name}...`, percentage);
+                
                 // Compress image if needed
                 const processedFile = await this.preprocessFile(uploadItem.file);
+                
                 // Upload file (cast Blob to File for API compatibility)
                 const fileToUpload = processedFile instanceof File ? processedFile : new File([processedFile], uploadItem.file.name, { type: processedFile.type });
                 const uploadResponse = await apiClient.uploadPhoto(fileToUpload, uploadItem.tag);
+                
                 // Extract photo from response - handle both direct photo return and {photo: ...} structure
-                const photo = uploadResponse.photo || uploadResponse;
+                const photo = uploadResponse.photo || (uploadResponse as unknown as Photo);
+                
                 // Add to photo manager
                 photoManager.addPhoto(photo);
+                
                 uploadItem.resolve(photo);
+                
                 log.info('File uploaded successfully', {
                     filename: uploadItem.file.name,
                     photoId: photo.id
                 });
-            }
-            catch (error) {
+                
+            } catch (error) {
                 log.error('File upload failed', error);
                 uploadItem.reject(error instanceof Error ? error : new Error(String(error)));
             }
         }
     }
+
     /**
      * Preprocess file before upload (compression, etc.)
      */
-    async preprocessFile(file) {
+    private async preprocessFile(file: File): Promise<File | Blob> {
         // Skip preprocessing for small files
         if (file.size < CONFIG.UPLOAD.COMPRESSION_THRESHOLD) {
             return file;
         }
+
         try {
             log.info('Compressing image before upload', {
                 originalSize: Utils.formatFileSize(file.size),
                 filename: file.name
             });
-            const compressedFile = await this.compressImage(file, CONFIG.UPLOAD.MAX_WIDTH, CONFIG.UPLOAD.QUALITY);
+            
+            const compressedFile = await this.compressImage(
+                file,
+                CONFIG.UPLOAD.MAX_WIDTH,
+                CONFIG.UPLOAD.QUALITY
+            );
+            
             log.info('Image compressed', {
                 originalSize: Utils.formatFileSize(file.size),
                 compressedSize: Utils.formatFileSize(compressedFile.size),
                 reduction: `${Math.round((1 - compressedFile.size / file.size) * 100)}%`
             });
+            
             return compressedFile;
-        }
-        catch (error) {
+            
+        } catch (error) {
             log.warn('Image compression failed, using original', error);
             return file;
         }
     }
+
     /**
      * Compress an image file
      */
-    compressImage(file, maxWidth = 1920, quality = 0.8) {
+    private compressImage(file: File, maxWidth: number = 1920, quality: number = 0.8): Promise<Blob> {
         return new Promise((resolve) => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const img = new Image();
+
             img.onload = () => {
                 // Calculate new dimensions
                 let { width, height } = img;
+                
                 if (width > maxWidth) {
                     height = (height * maxWidth) / width;
                     width = maxWidth;
                 }
+
                 canvas.width = width;
                 canvas.height = height;
+
                 // Draw and compress
                 if (ctx) {
                     ctx.drawImage(img, 0, 0, width, height);
                 }
+                
                 canvas.toBlob((blob) => {
                     resolve(blob || file);
                 }, 'image/jpeg', quality);
             };
+
             img.onerror = () => {
                 resolve(file); // Return original on error
             };
+
             img.src = URL.createObjectURL(file);
         });
     }
+
     /**
      * Show upload progress
      */
-    showUploadProgress(text, percentage) {
+    private showUploadProgress(text: string, percentage: number): void {
         const uploadProgress = document.getElementById('uploadProgress');
         const progressText = document.getElementById('progressText');
         const progressFill = document.getElementById('progressFill');
+
         if (uploadProgress && progressText && progressFill) {
             progressText.textContent = text;
             progressFill.style.width = `${percentage}%`;
             uploadProgress.classList.add('show');
+            
             // Update state
             state.set('uploadInProgress', true);
         }
+
         log.debug('Upload progress updated', { text, percentage });
     }
+
     /**
      * Hide upload progress
      */
-    hideUploadProgress() {
+    private hideUploadProgress(): void {
         const uploadProgress = document.getElementById('uploadProgress');
+        
         if (uploadProgress) {
             setTimeout(() => {
                 uploadProgress.classList.remove('show');
+                
                 // Update state
                 state.set('uploadInProgress', false);
             }, 1000);
         }
+
         log.debug('Upload progress hidden');
     }
+
     /**
      * Show notification to user
      */
-    showNotification(message, type = 'info') {
+    private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        const colors = {
+        
+        const colors: Record<string, string> = {
             success: '#4CAF50',
             error: '#f44336',
             info: '#2196F3'
         };
+        
         notification.style.cssText = `
             position: fixed;
             top: 2rem;
@@ -381,11 +493,14 @@ export class UploadManager {
             white-space: pre-line;
         `;
         notification.textContent = message;
+
         document.body.appendChild(notification);
+
         // Animate in
         setTimeout(() => {
             notification.style.transform = 'translateX(0)';
         }, 100);
+
         // Remove after duration based on message length
         const duration = Math.max(3000, message.length * 50);
         setTimeout(() => {
@@ -396,12 +511,14 @@ export class UploadManager {
                 }
             }, 300);
         }, duration);
+
         log.debug('Notification shown', { message, type });
     }
+
     /**
      * Get current upload status
      */
-    getStatus() {
+    public getStatus(): UploadStatus {
         return {
             isUploading: this.isUploading,
             queueLength: this.uploadQueue.length,
@@ -409,42 +526,51 @@ export class UploadManager {
             selectedTag: this.selectedTag
         };
     }
+
     /**
      * Cancel all pending uploads
      */
-    cancelUploads() {
+    public cancelUploads(): void {
         if (this.uploadQueue.length > 0) {
             const canceledCount = this.uploadQueue.length;
+            
             // Reject all pending uploads
             this.uploadQueue.forEach(item => {
                 item.reject(new Error('Upload canceled by user'));
             });
+            
             this.uploadQueue = [];
             this.hideUploadProgress();
+            
             this.showNotification(`Canceled ${canceledCount} pending upload(s)`, 'info');
+            
             log.info('Uploads canceled', { count: canceledCount });
         }
     }
+
     /**
      * Set the selected photo tag
      */
-    setSelectedTag(tag) {
+    public setSelectedTag(tag: PhotoTag): void {
         if (CONFIG.UI.PHOTO_TAGS[tag]) {
             this.selectedTag = tag;
             state.set('selectedTag', tag);
+            
             // Update UI
             const tagButtons = document.querySelectorAll('.tag-btn');
             tagButtons.forEach(btn => {
-                const element = btn;
+                const element = btn as HTMLElement;
                 element.classList.toggle('active', element.dataset.tag === tag);
             });
+            
             log.debug('Selected tag updated', tag);
         }
     }
+
     /**
      * Get upload statistics
      */
-    getStats() {
+    public getStats(): UploadStats {
         return {
             totalUploaded: state.get('photos')?.length || 0,
             uploadedToday: this.getPhotosUploadedToday().length,
@@ -452,36 +578,41 @@ export class UploadManager {
             totalSize: this.getTotalUploadSize()
         };
     }
+
     /**
      * Get photos uploaded today
      */
-    getPhotosUploadedToday() {
+    private getPhotosUploadedToday(): Photo[] {
         const photos = state.get('photos') || [];
         const today = new Date().toDateString();
-        return photos.filter((photo) => {
+        
+        return photos.filter((photo: Photo) => {
             const uploadDate = new Date(photo.uploadedAt).toDateString();
             return uploadDate === today;
         });
     }
+
     /**
      * Get average file size of uploaded photos
      */
-    getAverageFileSize() {
+    private getAverageFileSize(): number {
         const photos = state.get('photos') || [];
-        if (photos.length === 0)
-            return 0;
-        const totalSize = photos.reduce((sum, photo) => sum + (photo.size || 0), 0);
+        
+        if (photos.length === 0) return 0;
+        
+        const totalSize = photos.reduce((sum: number, photo: Photo) => sum + (photo.size || 0), 0);
         return Math.round(totalSize / photos.length);
     }
+
     /**
      * Get total size of all uploaded photos
      */
-    getTotalUploadSize() {
+    private getTotalUploadSize(): number {
         const photos = state.get('photos') || [];
-        return photos.reduce((sum, photo) => sum + (photo.size || 0), 0);
+        return photos.reduce((sum: number, photo: Photo) => sum + (photo.size || 0), 0);
     }
 }
+
 // Create and export singleton instance
 export const uploadManager = new UploadManager();
 export default uploadManager;
-//# sourceMappingURL=upload-manager.js.map
