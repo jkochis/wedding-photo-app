@@ -5,10 +5,11 @@ export default {
   // Module file extensions
   moduleFileExtensions: ['ts', 'js', 'json'],
   
-  // Transform files using babel-jest and ts-jest
+  // Transform files using ts-jest for both JS and TS
+  preset: 'ts-jest/presets/default-esm',
+  extensionsToTreatAsEsm: ['.ts'],
   transform: {
-    '^.+\\.js$': 'babel-jest',
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': ['ts-jest', { useESM: true }]
   },
   
   // Module name mapping for imports
