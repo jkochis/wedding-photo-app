@@ -8,7 +8,7 @@ import type { AppConfig } from './types/index.js';
 export const CONFIG: AppConfig = {
     // API Configuration
     API: {
-        BASE_URL: '',
+        BASE_URL: 'https://group-images-production.up.railway.app',
         ENDPOINTS: {
             PHOTOS: '/api/photos',
             UPLOAD: '/api/upload',

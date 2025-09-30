@@ -13,7 +13,21 @@ const PORT = Number(process.env.PORT) || 3000;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN || uuidv4();
 
 // Middleware
-app.use(cors());
+// Configure CORS to allow GitHub Pages and localhost for development
+const corsOptions = {
+    origin: [
+        'https://jkochis.github.io',
+        'http://localhost:3000',
+        'http://localhost:8080',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:8080'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -81,7 +95,7 @@ async function loadPhotos() {
         // Update photo URLs with current token
         let urlsUpdated = false;
         photos.forEach(photo => {
-            const expectedUrl = `/uploads/${photo.filename}?token=${ACCESS_TOKEN}`;
+            const expectedUrl = `https://group-images-production.up.railway.app/uploads/${photo.filename}?token=${ACCESS_TOKEN}`;
             if (photo.url !== expectedUrl) {
                 photo.url = expectedUrl;
                 urlsUpdated = true;
@@ -110,19 +124,20 @@ async function savePhotos() {
 
 // Routes
 
-// Root route with access validation
+// API-only server - GitHub Pages serves the frontend
+// Root route now returns API info
 app.get('/', (req, res) => {
-    const token = req.query.token;
-    
-    if (!token || token !== ACCESS_TOKEN) {
-        return res.status(401).json({
-            error: 'Access denied. Please use the correct access link.',
-            message: 'You need a valid access token to view this wedding photo gallery.'
-        });
-    }
-    
-    // Serve the main HTML file
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.json({
+        name: 'Wedding Photo App API',
+        version: '1.0.0',
+        endpoints: {
+            health: '/health',
+            photos: '/api/photos?token=YOUR_TOKEN',
+            upload: '/api/upload',
+            stats: '/api/stats?token=YOUR_TOKEN'
+        },
+        frontend: 'https://jkochis.github.io/wedding-photo-app'
+    });
 });
 
 // API to get all photos
@@ -150,7 +165,7 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
             id: uuidv4(),
             filename: req.file.filename,
             originalName: req.file.originalname,
-            url: `/uploads/${req.file.filename}?token=${ACCESS_TOKEN}`,
+            url: `https://group-images-production.up.railway.app/uploads/${req.file.filename}?token=${ACCESS_TOKEN}`,
             tag: tag,
             people: [],
             faces: [],
@@ -251,15 +266,8 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Serve static assets without token validation
-// Note: The main security is at the HTML page level and API endpoints
-app.use('/css', express.static(path.join(__dirname, '../public/css')));
-app.use('/js', express.static(path.join(__dirname, '../dist/public/js')));
-app.use('/manifest.json', express.static(path.join(__dirname, '../public/manifest.json')));
-app.use('/sw.js', express.static(path.join(__dirname, '../public/sw.js')));
-app.use('/favicon.ico', (req, res) => {
-    res.status(204).end(); // No favicon, return empty response
-});
+// Static files are served by GitHub Pages
+// Only serve uploads directory for photo access
 
 // Error handling middleware
 app.use((error, req, res, next) => {
