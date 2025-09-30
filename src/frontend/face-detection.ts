@@ -53,17 +53,19 @@ interface FaceDetectionStatus {
 export class FaceDetection {
     private faceApiLoaded: boolean;
     private isInitialized: boolean;
+    private modelsLoading: boolean;
 
     constructor() {
         this.faceApiLoaded = false;
         this.isInitialized = false;
+        this.modelsLoading = false;
         
-        // Defer initialization to allow Face API to load
-        setTimeout(() => this.init(), 1000);
+        // Defer initialization to not block UI
+        setTimeout(() => this.init(), 100);
     }
 
     /**
-     * Initialize face detection
+     * Initialize face detection (non-blocking background load)
      */
     public async init(): Promise<void> {
         if (this.isInitialized) return;
@@ -71,27 +73,38 @@ export class FaceDetection {
         log.info('Initializing Face Detection');
         
         try {
-            await this.initFaceAPI();
+            // Setup event listeners first
             this.setupEventListeners();
             this.isInitialized = true;
             
-            log.info('Face Detection initialized successfully', { loaded: this.faceApiLoaded });
+            // Start loading models in background (non-blocking)
+            this.loadModelsInBackground();
+            
+            log.info('Face Detection initialized (models loading in background)');
         } catch (error) {
             log.error('Failed to initialize Face Detection', error);
         }
     }
 
     /**
-     * Initialize Face API library
+     * Load face detection models in background (non-blocking)
      */
-    private async initFaceAPI(): Promise<void> {
+    private async loadModelsInBackground(): Promise<void> {
+        // If already loaded or currently loading, skip
+        if (this.faceApiLoaded || this.modelsLoading) {
+            return;
+        }
+        
         try {
             if (typeof faceapi === 'undefined') {
                 log.warn('Face API library not loaded, face detection will be disabled');
+                this.updateButtonState(false, 'Face detection unavailable');
                 return;
             }
             
-            log.info('Loading Face API models...');
+            this.modelsLoading = true;
+            this.updateButtonState(false, 'Loading face detection...');
+            log.info('Loading Face API models in background...');
             
             // Load face detection models from CDN
             const MODEL_URL = CONFIG.FACE_DETECTION.MODEL_URL;
@@ -103,16 +116,22 @@ export class FaceDetection {
             ]);
             
             this.faceApiLoaded = true;
+            this.modelsLoading = false;
             
             // Update state
             state.set('faceApiLoaded', true);
+            
+            // Enable button
+            this.updateButtonState(true, CONFIG.FACE_DETECTION.BUTTON_TEXT);
             
             log.info('Face API loaded successfully');
             
         } catch (error) {
             log.error('Failed to load Face API', error);
             this.faceApiLoaded = false;
+            this.modelsLoading = false;
             state.set('faceApiLoaded', false);
+            this.updateButtonState(false, 'Face detection failed to load');
         }
     }
 
@@ -123,9 +142,30 @@ export class FaceDetection {
         const detectBtn = document.getElementById('detectFacesBtn');
         
         if (detectBtn) {
+            // Initially disable button until models load
+            this.updateButtonState(false, 'Loading face detection...');
+            
             detectBtn.addEventListener('click', () => {
                 this.detectFacesInCurrentPhoto();
             });
+        }
+    }
+    
+    /**
+     * Update face detection button state
+     */
+    private updateButtonState(enabled: boolean, text: string): void {
+        const detectBtn = document.getElementById('detectFacesBtn') as HTMLButtonElement | null;
+        
+        if (detectBtn) {
+            detectBtn.disabled = !enabled;
+            detectBtn.textContent = text;
+            
+            if (enabled) {
+                detectBtn.classList.remove('loading');
+            } else {
+                detectBtn.classList.add('loading');
+            }
         }
     }
 
@@ -174,8 +214,14 @@ export class FaceDetection {
      * Detect faces in the currently displayed photo
      */
     private async detectFacesInCurrentPhoto(): Promise<void> {
+        // Check if models are loaded
+        if (this.modelsLoading) {
+            this.showNotification('Face detection models are still loading, please wait...', 'info');
+            return;
+        }
+        
         if (!this.faceApiLoaded) {
-            this.showNotification('Face detection is loading, please wait...', 'info');
+            this.showNotification('Face detection is not available', 'error');
             return;
         }
         

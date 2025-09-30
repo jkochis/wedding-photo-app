@@ -114,14 +114,44 @@
   backdrop-filter: blur(10px);
 }
 
-.detect-faces-btn:hover {
+.detect-faces-btn:hover:not(:disabled) {
   background: var(--color-secondary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-lg);
 }
 
-.detect-faces-btn:active {
+.detect-faces-btn:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.detect-faces-btn:disabled,
+.detect-faces-btn.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-text-secondary);
+}
+
+.detect-faces-btn.loading {
+  position: relative;
+  padding-left: var(--space-lg);
+}
+
+.detect-faces-btn.loading::before {
+  content: '';
+  position: absolute;
+  left: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
 }
 
 /* Modal Info */
