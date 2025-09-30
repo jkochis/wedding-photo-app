@@ -281,6 +281,60 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Admin endpoint to delete ALL photos and data (use with caution!)
+app.delete('/api/admin/clear-all', validateAccess, async (req, res) => {
+    try {
+        // Require explicit confirmation in request body
+        if (req.body.confirm !== 'DELETE_ALL_DATA') {
+            return res.status(400).json({ 
+                error: 'Confirmation required. Send {"confirm": "DELETE_ALL_DATA"} in request body.' 
+            });
+        }
+        
+        console.log('⚠️  ADMIN: Clearing all photos and data...');
+        
+        const uploadsDir = process.env.NODE_ENV === 'production' 
+            ? '/app/data/uploads' 
+            : path.join(__dirname, '../uploads');
+        
+        // Count photos before deletion
+        const photoCount = photos.length;
+        let filesDeleted = 0;
+        let fileErrors = 0;
+        
+        // Delete all photo files
+        for (const photo of photos) {
+            try {
+                const filePath = path.join(uploadsDir, photo.filename);
+                await fs.unlink(filePath);
+                filesDeleted++;
+            } catch (error) {
+                console.warn(`Could not delete file ${photo.filename}:`, error.message);
+                fileErrors++;
+            }
+        }
+        
+        // Clear photos array and save empty database
+        photos.length = 0;
+        await savePhotos();
+        
+        console.log(`✅ ADMIN: Cleared ${photoCount} photos from database, deleted ${filesDeleted} files`);
+        
+        res.json({ 
+            success: true,
+            message: 'All photos and data deleted successfully',
+            stats: {
+                photosCleared: photoCount,
+                filesDeleted,
+                fileErrors
+            }
+        });
+    } catch (error) {
+        console.error('ADMIN: Clear all error:', error);
+        res.status(500).json({ error: 'Failed to clear all data' });
+    }
+});
+
 // Static files are served by GitHub Pages
 // Only serve uploads directory for photo access
 
