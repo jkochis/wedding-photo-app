@@ -91,12 +91,15 @@ async function loadPhotos() {
     try {
         const data = await fs.readFile(photosFilePath, 'utf8');
         photos = JSON.parse(data);
+        console.log(`📂 Loaded ${photos.length} photos from database`);
         
-        // Update photo URLs with current token
+        // Update photo URLs with current token and fix any relative URLs
         let urlsUpdated = false;
         photos.forEach(photo => {
             const expectedUrl = `https://group-images-production.up.railway.app/uploads/${photo.filename}?token=${ACCESS_TOKEN}`;
-            if (photo.url !== expectedUrl) {
+            // Check if URL is relative or doesn't match expected format
+            if (!photo.url || photo.url.startsWith('/') || photo.url !== expectedUrl) {
+                console.log(`🔧 Updating URL for ${photo.filename}: ${photo.url || 'undefined'} -> ${expectedUrl}`);
                 photo.url = expectedUrl;
                 urlsUpdated = true;
             }
@@ -105,10 +108,10 @@ async function loadPhotos() {
         // Save updated URLs if needed
         if (urlsUpdated) {
             await savePhotos();
-            console.log('Updated photo URLs with current token');
+            console.log('✅ Updated photo URLs with current token');
         }
     } catch (error) {
-        console.log('No existing photos file found, starting fresh');
+        console.log('📁 No existing photos file found, starting fresh');
         photos = [];
     }
 }
