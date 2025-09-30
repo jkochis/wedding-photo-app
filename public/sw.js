@@ -1,9 +1,11 @@
 // Wedding Photo App Service Worker
-const CACHE_NAME = 'wedding-photos-v1';
+const CACHE_NAME = 'wedding-photos-v2';
 const urlsToCache = [
     '/',
-    '/styles.css',
-    '/script.js',
+    '/css/main.css',
+    '/js/main.js',
+    '/js/config.js',
+    '/js/utils.js',
     '/manifest.json'
 ];
 

@@ -165,8 +165,8 @@ Each component follows a consistent API pattern:
 ### From Old CSS Structure
 The previous monolithic CSS files have been replaced with this modular system:
 
-- `styles.css` → Distributed across base/, utilities/, and components/
-- `styles-enhanced.css` → Organized into the new modular structure
+- Legacy monolithic CSS → Distributed across base/, utilities/, and components/
+- Enhanced features → Organized into the new modular structure
 
 ### Benefits of New Structure
 - **Maintainability**: Easier to find and modify specific styles

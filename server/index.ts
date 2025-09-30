@@ -319,10 +319,7 @@ app.use('/js', express.static(path.join(__dirname, '../dist/frontend')));
 app.use('/manifest.json', express.static(path.join(__dirname, '../public/manifest.json')));
 app.use('/sw.js', express.static(path.join(__dirname, '../public/sw.js')));
 
-// Legacy static file serving (for backwards compatibility)
-app.use('/styles.css', express.static(path.join(__dirname, '../public/styles.css')));
-app.use('/script.js', express.static(path.join(__dirname, '../public/script.js')));
-app.use('/test-integration.html', express.static(path.join(__dirname, '../public/test-integration.html')));
+// Legacy static file serving removed - using modular TypeScript/CSS architecture
 app.use('/favicon.ico', (req, res) => {
     res.status(204).end(); // No favicon, return empty response
 });

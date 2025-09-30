@@ -251,13 +251,10 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Serve static assets (CSS, JS, manifest.json, service worker) without token validation
+// Serve static assets without token validation
 // Note: The main security is at the HTML page level and API endpoints
-app.use('/styles.css', express.static(path.join(__dirname, '../public/styles.css')));
-app.use('/script.js', express.static(path.join(__dirname, '../public/script.js')));
 app.use('/css', express.static(path.join(__dirname, '../public/css')));
 app.use('/js', express.static(path.join(__dirname, '../dist/frontend')));
-app.use('/test-integration.html', express.static(path.join(__dirname, '../public/test-integration.html')));
 app.use('/manifest.json', express.static(path.join(__dirname, '../public/manifest.json')));
 app.use('/sw.js', express.static(path.join(__dirname, '../public/sw.js')));
 app.use('/favicon.ico', (req, res) => {
