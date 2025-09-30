@@ -44,6 +44,7 @@ export class UploadManager {
     private currentUploads: number;
     private maxConcurrentUploads: number;
     private selectedTag: PhotoTag;
+    private initialized: boolean;
 
     constructor() {
         this.isUploading = false;
@@ -51,14 +52,18 @@ export class UploadManager {
         this.currentUploads = 0;
         this.maxConcurrentUploads = CONFIG.UPLOAD.MAX_CONCURRENT;
         this.selectedTag = 'wedding'; // Default tag
-        
-        this.init();
+        this.initialized = false;
     }
 
     /**
      * Initialize upload manager
      */
     init(): void {
+        if (this.initialized) {
+            log.debug('Upload Manager already initialized, skipping');
+            return;
+        }
+        
         log.info('Initializing Upload Manager');
         
         this.setupEventListeners();
@@ -69,6 +74,7 @@ export class UploadManager {
             this.selectedTag = newTag as PhotoTag;
         });
         
+        this.initialized = true;
         log.info('Upload Manager initialized');
     }
 
