@@ -7,7 +7,7 @@ import { CONFIG } from './config.js';
 import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
-import type { Photo, FaceDetection as FaceDetectionType } from '../../src/types/index.js';
+import type { Photo, FaceDetection as FaceDetectionType } from './types/index.js';
 
 // External Face API types (simplified)
 declare global {

@@ -51,3 +51,11 @@ temp/
 # Build artifacts
 dist/
 dist-static/
+
+# TypeScript
+*.tsbuildinfo
+src/frontend/types/
+
+# Test coverage
+*.lcov
+.nyc_output

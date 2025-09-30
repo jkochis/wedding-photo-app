@@ -6,7 +6,7 @@
 import { CONFIG } from './config.js';
 import { log, errorHandler } from './logger.js';
 import Utils from './utils.js';
-import type { Photo, ApiResponse, UploadResponse } from '../../src/types/index.js';
+import type { Photo, ApiResponse, UploadResponse } from './types/index.js';
 
 interface ApiClientOptions {
     baseURL?: string;

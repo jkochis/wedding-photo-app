@@ -1,18 +1,15 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": "./src",
+    "outDir": "./dist/public/js",
+    "rootDir": "./src/frontend",
+    "baseUrl": "./src/frontend",
     "paths": {
-      "@/*": ["./*"],
-      "@types/*": ["./types/*"],
-      "@frontend/*": ["./frontend/*"]
+      "@/types/*": ["../types/*"]
     }
   },
   "include": [
-    "src/frontend/**/*",
-    "src/types/**/*"
+    "src/frontend/**/*"
   ],
   "exclude": [
     "node_modules",

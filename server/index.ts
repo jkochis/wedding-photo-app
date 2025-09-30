@@ -6,7 +6,7 @@ import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import type { Request, Response, NextFunction } from 'express';
-import type { Photo, PhotoTag } from '../src/types/index.js';
+import type { Photo, PhotoTag } from './shared-types.js';
 import { storageService } from './storage.js';
 import type { StorageInfo, StorageStatus } from './types.js';
 
