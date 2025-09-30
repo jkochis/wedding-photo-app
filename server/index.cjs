@@ -45,14 +45,21 @@ const validateAccess = (req, res, next) => {
 };
 
 // Serve static files with access token validation
+const uploadsStaticPath = process.env.NODE_ENV === 'production' 
+    ? '/app/data/uploads' 
+    : path.join(__dirname, '../uploads');
+    
 app.use('/uploads', (req, res, next) => {
     validateAccess(req, res, next);
-}, express.static(path.join(__dirname, '../uploads')));
+}, express.static(uploadsStaticPath));
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
-        const uploadsDir = path.join(__dirname, '../uploads');
+        // Use persistent volume in production, local path in development
+        const uploadsDir = process.env.NODE_ENV === 'production' 
+            ? '/app/data/uploads' 
+            : path.join(__dirname, '../uploads');
         try {
             await fs.access(uploadsDir);
         } catch {
@@ -84,7 +91,9 @@ const upload = multer({
 
 // Data storage (in production, you'd want to use a proper database)
 let photos = [];
-const photosFilePath = path.join(__dirname, 'photos.json');
+// Use persistent volume in production (Railway), local path in development
+const dataDir = process.env.NODE_ENV === 'production' ? '/app/data' : __dirname;
+const photosFilePath = path.join(dataDir, 'photos.json');
 
 // Load existing photos on server start
 async function loadPhotos() {
@@ -200,7 +209,10 @@ app.delete('/api/photos/:id', validateAccess, async (req, res) => {
         const photo = photos[photoIndex];
         
         // Delete the file
-        const filePath = path.join(__dirname, '../uploads', photo.filename);
+        const uploadsDir = process.env.NODE_ENV === 'production' 
+            ? '/app/data/uploads' 
+            : path.join(__dirname, '../uploads');
+        const filePath = path.join(uploadsDir, photo.filename);
         try {
             await fs.unlink(filePath);
         } catch (error) {
@@ -307,6 +319,8 @@ async function startServer() {
         console.log(`📱 Access URL: http://localhost:${PORT}?token=${ACCESS_TOKEN}`);
         console.log(`🔐 Access Token: ${ACCESS_TOKEN}`);
         console.log(`📸 Total photos loaded: ${photos.length}`);
+        console.log(`💾 Storage: ${dataDir}`);
+        console.log(`📁 Uploads: ${uploadsStaticPath}`);
         
         if (!process.env.ACCESS_TOKEN) {
             console.log('⚠️  No ACCESS_TOKEN set in environment variables. Using generated token above.');
