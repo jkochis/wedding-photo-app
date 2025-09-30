@@ -46,7 +46,7 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "multer": "^2.0.2",
-    "uuid": "^13.0.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.3",
