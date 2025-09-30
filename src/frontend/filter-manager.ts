@@ -95,6 +95,13 @@ export class FilterManager {
             this.updatePeopleFilterOptions();
         });
 
+        // Subscribe to filteredPhotos changes to update gallery display
+        state.subscribe('filteredPhotos', (newFilteredPhotos: Photo[]) => {
+            if (newFilteredPhotos) {
+                this.updateGalleryDisplay(newFilteredPhotos);
+            }
+        });
+
         // Subscribe to filter changes
         state.subscribe('currentFilter', (newFilter: PhotoTag | 'all') => {
             this.currentCategoryFilter = newFilter;
