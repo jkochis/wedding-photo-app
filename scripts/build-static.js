@@ -35,6 +35,20 @@ async function copyDirectory(src, dest) {
     }
 }
 
+async function copyCompiledJS() {
+    const distFrontendDir = path.join(PROJECT_ROOT, 'dist/frontend');
+    const staticJsDir = path.join(DIST_STATIC, 'js');
+    
+    try {
+        await fs.mkdir(staticJsDir, { recursive: true });
+        await copyDirectory(distFrontendDir, staticJsDir);
+        console.log(`📄 Copied compiled frontend to js/`);
+    } catch (error) {
+        console.warn('⚠️  Could not copy compiled JS files:', error.message);
+        console.log('   Make sure to run "npm run build:frontend" first');
+    }
+}
+
 async function updateIndexHtml() {
     const indexPath = path.join(DIST_STATIC, 'index.html');
     let content = await fs.readFile(indexPath, 'utf8');
@@ -169,6 +183,10 @@ async function main() {
         // Copy public directory
         console.log('📁 Copying static assets...');
         await copyDirectory(PUBLIC_DIR, DIST_STATIC);
+        
+        // Copy compiled JavaScript files
+        console.log('📁 Copying compiled JavaScript...');
+        await copyCompiledJS();
         
         // Update HTML for production
         console.log('\n🔧 Configuring for production...');

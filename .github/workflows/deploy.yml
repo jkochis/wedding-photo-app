@@ -29,8 +29,8 @@ jobs:
     - name: Run tests
       run: npm run test
       
-    - name: Build TypeScript
-      run: npm run build
+    - name: Build frontend
+      run: npm run build:frontend
 
   deploy:
     needs: test
@@ -61,7 +61,7 @@ jobs:
       
     - name: Build for production
       run: |
-        npm run build
+        npm run build:frontend
         npm run build:static
       env:
         NODE_ENV: production

@@ -256,7 +256,7 @@ app.get('/health', (req, res) => {
 app.use('/styles.css', express.static(path.join(__dirname, '../public/styles.css')));
 app.use('/script.js', express.static(path.join(__dirname, '../public/script.js')));
 app.use('/css', express.static(path.join(__dirname, '../public/css')));
-app.use('/js', express.static(path.join(__dirname, '../public/js')));
+app.use('/js', express.static(path.join(__dirname, '../dist/frontend')));
 app.use('/test-integration.html', express.static(path.join(__dirname, '../public/test-integration.html')));
 app.use('/manifest.json', express.static(path.join(__dirname, '../public/manifest.json')));
 app.use('/sw.js', express.static(path.join(__dirname, '../public/sw.js')));

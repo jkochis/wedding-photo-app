@@ -4,9 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "allowJs": true,
+    "allowJs": false,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -21,28 +21,26 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
     "exactOptionalPropertyTypes": false,
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["./src/*"],
-      "@types/*": ["./src/types/*"],
-      "@utils/*": ["./src/utils/*"],
-      "@config/*": ["./src/config/*"]
+      "@/*": ["./frontend/*"],
+      "@frontend/*": ["./frontend/*"],
+      "@server/*": ["../server/*"],
+      "@types/*": ["./types/*"]
     }
   },
   "include": [
     "src/**/*",
     "server/**/*",
-    "public/**/*",
     "scripts/**/*",
-    "tests/**/*",
-    "*.js",
-    "*.ts"
+    "tests/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "dist-static",
     "uploads",
-    "public/css",
+    "public",
     "**/*.test.js",
     "**/*.test.ts"
   ],

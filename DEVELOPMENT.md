@@ -7,30 +7,48 @@ This project has been fully migrated to TypeScript for better type safety and de
 ### Project Structure
 
 ```
-public/js/           # TypeScript source files (.ts)
-├── api-client.ts    # API communication layer
-├── config.ts        # Configuration management
-├── face-detection.ts # Face detection and tagging
-├── filter-manager.ts # Photo filtering logic
-├── logger.ts        # Logging system
-├── main.ts          # Main application entry point
-├── modal-manager.ts # Photo viewer modal
-├── photo-manager.ts # Photo data management
-├── skeleton-loader.ts # Loading placeholders
-├── state.ts         # State management
-├── theme-manager.ts # Dark/light mode switching
-├── upload-manager.ts # File upload handling
-└── utils.ts         # Utility functions
+src/
+├── frontend/        # Frontend TypeScript source files
+│   ├── api-client.ts    # API communication layer
+│   ├── config.ts        # Configuration management
+│   ├── face-detection.ts # Face detection and tagging
+│   ├── filter-manager.ts # Photo filtering logic
+│   ├── logger.ts        # Logging system
+│   ├── main.ts          # Main application entry point
+│   ├── modal-manager.ts # Photo viewer modal
+│   ├── photo-manager.ts # Photo data management
+│   ├── skeleton-loader.ts # Loading placeholders
+│   ├── state.ts         # State management
+│   ├── theme-manager.ts # Dark/light mode switching
+│   ├── upload-manager.ts # File upload handling
+│   └── utils.ts         # Utility functions
+└── types/           # Shared TypeScript interfaces
+    └── index.ts     # Common types and interfaces
 
-dist/public/js/      # Compiled JavaScript output
-public/js/           # Runtime JavaScript files (copied from dist)
+dist/
+├── frontend/        # Compiled frontend JavaScript
+└── types/           # Compiled shared types
+
+server/              # Backend server files
+├── index.ts         # TypeScript server
+├── index.cjs        # CommonJS production server
+├── storage.ts       # Google Cloud Storage service
+└── types.ts         # Server-specific types
+
+public/              # Static web assets
+├── css/             # Stylesheets
+├── index.html       # Main HTML file
+└── manifest.json    # PWA manifest
 ```
 
 ### Development Commands
 
 #### Building TypeScript
 ```bash
-# Build all TypeScript files to JavaScript
+# Build frontend TypeScript to JavaScript
+npm run build:frontend
+
+# Build everything (frontend + server)
 npm run build
 
 # Build with file watching (rebuilds on changes)
@@ -38,15 +56,19 @@ npm run build:watch
 
 # Type checking only (no output)
 npm run type-check
+npm run type-check:frontend
+
+# Clean build artifacts
+npm run clean:dist
 ```
 
 #### Development Workflow
-1. **Edit TypeScript files** in `public/js/*.ts`
+1. **Edit TypeScript files** in `src/frontend/*.ts`
 2. **Build the frontend** when ready to test:
    ```bash
-   npm run build
+   npm run build:frontend
    ```
-3. **Start the server**:
+3. **Start the server** (auto-builds frontend):
    ```bash
    npm start
    ```
