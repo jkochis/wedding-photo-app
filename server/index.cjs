@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
+const { createStorage } = require('./storage/index.cjs');
 require('dotenv').config();
 
 const app = express();
@@ -11,6 +12,16 @@ const PORT = Number(process.env.PORT) || 3000;
 
 // Generate a unique access token for this instance
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN || uuidv4();
+
+// Initialize storage adapter (GCS or local based on STORAGE_TYPE env variable)
+const storageAdapter = createStorage({
+    type: process.env.STORAGE_TYPE || 'local',
+    local: {
+        uploadsDir: process.env.NODE_ENV === 'production' ? '/app/data/uploads' : path.join(__dirname, '../uploads'),
+        baseUrl: 'https://group-images-production.up.railway.app',
+        accessToken: ACCESS_TOKEN
+    }
+});
 
 // Middleware
 // Configure CORS to allow GitHub Pages and localhost for development
@@ -41,41 +52,27 @@ const validateAccess = (req, res, next) => {
         });
     }
     
-    next();
+    next()
+
+;
 };
 
-// Serve static files with access token validation
-const uploadsStaticPath = process.env.NODE_ENV === 'production' 
-    ? '/app/data/uploads' 
-    : path.join(__dirname, '../uploads');
+// Serve static files with access token validation (only for local storage)
+if (process.env.STORAGE_TYPE !== 'gcs') {
+    const uploadsStaticPath = process.env.NODE_ENV === 'production' 
+        ? '/app/data/uploads' 
+        : path.join(__dirname, '../uploads');
+        
+    app.use('/uploads', (req, res, next) => {
+        validateAccess(req, res, next);
+    }, express.static(uploadsStaticPath));
     
-app.use('/uploads', (req, res, next) => {
-    validateAccess(req, res, next);
-}, express.static(uploadsStaticPath));
+    console.log('📁 Serving static files from:', uploadsStaticPath);
+}
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: async (req, file, cb) => {
-        // Use persistent volume in production, local path in development
-        const uploadsDir = process.env.NODE_ENV === 'production' 
-            ? '/app/data/uploads' 
-            : path.join(__dirname, '../uploads');
-        try {
-            await fs.access(uploadsDir);
-        } catch {
-            await fs.mkdir(uploadsDir, { recursive: true });
-        }
-        cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const extension = path.extname(file.originalname);
-        cb(null, `photo-${uniqueSuffix}${extension}`);
-    }
-});
-
+// Configure multer for file uploads (memory storage for GCS, disk for local)
 const upload = multer({
-    storage: storage,
+    storage: multer.memoryStorage(), // Store in memory, then upload via storage adapter
     limits: {
         fileSize: 25 * 1024 * 1024, // 25MB limit for modern phone photos
     },
@@ -102,23 +99,7 @@ async function loadPhotos() {
         photos = JSON.parse(data);
         console.log(`📂 Loaded ${photos.length} photos from database`);
         
-        // Update photo URLs with current token and fix any relative URLs
-        let urlsUpdated = false;
-        photos.forEach(photo => {
-            const expectedUrl = `https://group-images-production.up.railway.app/uploads/${photo.filename}?token=${ACCESS_TOKEN}`;
-            // Check if URL is relative or doesn't match expected format
-            if (!photo.url || photo.url.startsWith('/') || photo.url !== expectedUrl) {
-                console.log(`🔧 Updating URL for ${photo.filename}: ${photo.url || 'undefined'} -> ${expectedUrl}`);
-                photo.url = expectedUrl;
-                urlsUpdated = true;
-            }
-        });
-        
-        // Save updated URLs if needed
-        if (urlsUpdated) {
-            await savePhotos();
-            console.log('✅ Updated photo URLs with current token');
-        }
+        // Note: No URL updating needed for GCS - signed URLs are regenerated on access
     } catch (error) {
         console.log('📁 No existing photos file found, starting fresh');
         photos = [];
@@ -142,6 +123,7 @@ app.get('/', (req, res) => {
     res.json({
         name: 'Wedding Photo App API',
         version: '1.0.0',
+        storage: process.env.STORAGE_TYPE || 'local',
         endpoints: {
             health: '/health',
             photos: '/api/photos?token=YOUR_TOKEN',
@@ -163,7 +145,8 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
         console.log('Upload request received:', {
             hasFile: !!req.file,
             body: req.body,
-            contentType: req.get('Content-Type')
+            contentType: req.get('Content-Type'),
+            storage: process.env.STORAGE_TYPE || 'local'
         });
         
         if (!req.file) {
@@ -173,11 +156,26 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
 
         const { tag = 'other' } = req.body;
         
+        // Generate filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const extension = path.extname(req.file.originalname);
+        const filename = `photo-${uniqueSuffix}${extension}`;
+        
+        // Save to storage (GCS or local) using storage adapter
+        const fileUrl = await storageAdapter.saveFile(
+            req.file.buffer,
+            filename,
+            {
+                originalName: req.file.originalname,
+                mimetype: req.file.mimetype
+            }
+        );
+        
         const photo = {
             id: uuidv4(),
-            filename: req.file.filename,
+            filename: filename,
             originalName: req.file.originalname,
-            url: `https://group-images-production.up.railway.app/uploads/${req.file.filename}?token=${ACCESS_TOKEN}`,
+            url: fileUrl, // URL from storage adapter (signed URL for GCS, regular URL for local)
             tag: tag,
             people: [],
             faces: [],
@@ -189,10 +187,11 @@ app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res)
         photos.push(photo);
         await savePhotos();
 
+        console.log(`✅ Photo uploaded: ${filename} to ${process.env.STORAGE_TYPE || 'local'} storage`);
         res.json(photo);
     } catch (error) {
         console.error('Upload error:', error);
-        res.status(500).json({ error: 'Failed to upload photo' });
+        res.status(500).json({ error: 'Failed to upload photo: ' + error.message });
     }
 });
 
@@ -208,13 +207,9 @@ app.delete('/api/photos/:id', validateAccess, async (req, res) => {
 
         const photo = photos[photoIndex];
         
-        // Delete the file
-        const uploadsDir = process.env.NODE_ENV === 'production' 
-            ? '/app/data/uploads' 
-            : path.join(__dirname, '../uploads');
-        const filePath = path.join(uploadsDir, photo.filename);
+        // Delete file using storage adapter
         try {
-            await fs.unlink(filePath);
+            await storageAdapter.deleteFile(photo.filename);
         } catch (error) {
             console.warn('Could not delete file:', error);
         }
@@ -277,7 +272,8 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'healthy', 
         timestamp: new Date().toISOString(),
-        photos: photos.length 
+        photos: photos.length,
+        storage: process.env.STORAGE_TYPE || 'local'
     });
 });
 
@@ -293,40 +289,23 @@ app.delete('/api/admin/clear-all', validateAccess, async (req, res) => {
         
         console.log('⚠️  ADMIN: Clearing all photos and data...');
         
-        const uploadsDir = process.env.NODE_ENV === 'production' 
-            ? '/app/data/uploads' 
-            : path.join(__dirname, '../uploads');
-        
-        // Count photos before deletion
         const photoCount = photos.length;
-        let filesDeleted = 0;
-        let fileErrors = 0;
         
-        // Delete all photo files
-        for (const photo of photos) {
-            try {
-                const filePath = path.join(uploadsDir, photo.filename);
-                await fs.unlink(filePath);
-                filesDeleted++;
-            } catch (error) {
-                console.warn(`Could not delete file ${photo.filename}:`, error.message);
-                fileErrors++;
-            }
-        }
+        // Delete all files using storage adapter
+        const deleteStats = await storageAdapter.deleteAllFiles();
         
         // Clear photos array and save empty database
         photos.length = 0;
         await savePhotos();
         
-        console.log(`✅ ADMIN: Cleared ${photoCount} photos from database, deleted ${filesDeleted} files`);
+        console.log(`✅ ADMIN: Cleared ${photoCount} photos from database`);
         
         res.json({ 
             success: true,
             message: 'All photos and data deleted successfully',
             stats: {
                 photosCleared: photoCount,
-                filesDeleted,
-                fileErrors
+                ...deleteStats
             }
         });
     } catch (error) {
@@ -373,8 +352,12 @@ async function startServer() {
         console.log(`📱 Access URL: http://localhost:${PORT}?token=${ACCESS_TOKEN}`);
         console.log(`🔐 Access Token: ${ACCESS_TOKEN}`);
         console.log(`📸 Total photos loaded: ${photos.length}`);
-        console.log(`💾 Storage: ${dataDir}`);
-        console.log(`📁 Uploads: ${uploadsStaticPath}`);
+        console.log(`💾 Database: ${photosFilePath}`);
+        console.log(`☁️  Storage Type: ${process.env.STORAGE_TYPE || 'local'}`);
+        
+        if (process.env.STORAGE_TYPE === 'gcs') {
+            console.log(`📦 GCS Bucket: ${process.env.GCS_BUCKET_NAME}`);
+        }
         
         if (!process.env.ACCESS_TOKEN) {
             console.log('⚠️  No ACCESS_TOKEN set in environment variables. Using generated token above.');

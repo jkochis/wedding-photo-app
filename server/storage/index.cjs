@@ -3,7 +3,7 @@
  * Creates appropriate storage adapter based on configuration
  */
 
-const GCSStorage = require('./gcs-storage');
+const GCSStorage = require('./gcs-storage.cjs');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -152,9 +152,9 @@ function createStorage(config) {
         // Handle credentials (keyfile or base64 encoded)
         if (config.gcs?.keyFilename || process.env.GCS_KEYFILE) {
             gcsConfig.keyFilename = config.gcs?.keyFilename || process.env.GCS_KEYFILE;
-        } else if (process.env.GCS_CREDENTIALS_BASE64) {
+        } else if (process.env.GCS_SERVICE_ACCOUNT_KEY_BASE64) {
             // Decode base64 credentials (for Railway)
-            const credentialsJson = Buffer.from(process.env.GCS_CREDENTIALS_BASE64, 'base64').toString('utf-8');
+            const credentialsJson = Buffer.from(process.env.GCS_SERVICE_ACCOUNT_KEY_BASE64, 'base64').toString('utf-8');
             gcsConfig.credentials = JSON.parse(credentialsJson);
         }
         
