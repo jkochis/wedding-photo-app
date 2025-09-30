@@ -89,7 +89,7 @@ export class ApiClient {
      * Build URL with query parameters
      */
     private _buildUrl(endpoint: string, params: Record<string, any> = {}): string {
-        const url = new URL(endpoint, window.location.origin);
+        const url = new URL(endpoint, this.baseURL);
         
         // Always include access token
         if (this.accessToken) {
