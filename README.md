@@ -40,9 +40,19 @@ A beautiful, mobile-first web application for sharing wedding photos with friend
 
 ### Basic Commands
 ```bash
-npm start          # Start the server
-npm run dev        # Start development server (same as start)
-npm run clean      # Clear uploaded photos and database
+npm start          # Build and start the server
+npm run dev        # Build and start development server
+npm run build      # Build TypeScript (frontend + server)
+npm run clean      # Clear uploaded photos, build artifacts, and database
+```
+
+### TypeScript Development
+```bash
+npm run build:frontend     # Build frontend TypeScript to dist/public/js/
+npm run build:server      # Build server TypeScript to dist/server/
+npm run type-check        # Check all TypeScript files for errors
+npm run type-check:frontend # Check only frontend TypeScript files
+npm run build:watch       # Watch and rebuild frontend on changes
 ```
 
 ### CSS Development Tools
@@ -149,28 +159,53 @@ For internet-wide access, deploy to platforms like:
 
 ```
 wedding-photo-app/
-├── public/              # Frontend files
-│   ├── css/            # Modular CSS architecture
-│   │   ├── base/       # Foundation styles (reset, tokens, typography)
-│   │   ├── utilities/  # Utility classes (spacing, layout, visual)
-│   │   ├── layout/     # Layout components
-│   │   ├── components/ # UI components
-│   │   └── main.css    # CSS entry point
-│   ├── js/             # Modular JavaScript (in development)
-│   ├── index.html      # Main HTML file
-│   ├── script.js       # JavaScript functionality (legacy)
-│   └── manifest.json   # PWA manifest
-├── server/             # Backend files
-│   ├── index.js        # Express server
-│   └── photos.json     # Photo database (auto-generated)
-├── scripts/            # Development tools
-│   └── css-utils.js    # CSS architecture management
-├── docs/               # Documentation
-│   └── CSS_DEVELOPMENT.md  # CSS development guide
-├── uploads/            # Uploaded photos (auto-generated)
-├── package.json        # Node.js dependencies
-├── .gitignore         # Git ignore rules
-└── README.md          # This file
+├── src/                 # TypeScript source files
+│   ├── frontend/       # Frontend TypeScript modules
+│   │   ├── api-client.ts      # API communication layer
+│   │   ├── config.ts          # App configuration
+│   │   ├── face-detection.ts  # AI face detection
+│   │   ├── filter-manager.ts  # Photo filtering logic
+│   │   ├── logger.ts          # Logging system
+│   │   ├── main.ts            # Main app entry point
+│   │   ├── modal-manager.ts   # Photo modal viewer
+│   │   ├── photo-manager.ts   # Photo data management
+│   │   ├── state.ts           # Event-driven state management
+│   │   ├── theme-manager.ts   # Theme switching
+│   │   ├── upload-manager.ts  # File upload handling
+│   │   └── utils.ts           # Common utilities
+│   └── types/          # Shared TypeScript type definitions
+│       └── index.ts    # All app type definitions
+├── dist/               # Compiled TypeScript output
+│   ├── public/js/      # Built frontend JavaScript
+│   └── server/         # Built server JavaScript
+├── public/             # Static frontend files
+│   ├── css/           # Modular CSS architecture
+│   │   ├── base/      # Foundation styles (reset, tokens, typography)
+│   │   ├── utilities/ # Utility classes (spacing, layout, visual)
+│   │   ├── layout/    # Layout components
+│   │   ├── components/# UI components
+│   │   └── main.css   # CSS entry point
+│   ├── index.html     # Main HTML file
+│   ├── script.js      # Legacy monolithic JS (being replaced)
+│   └── manifest.json  # PWA manifest
+├── server/            # Backend TypeScript files
+│   ├── index.ts       # Express server (TypeScript)
+│   ├── index.cjs      # Express server (CommonJS)
+│   ├── shared-types.ts # Server-only type definitions
+│   ├── storage.ts     # File storage service
+│   ├── types.ts       # Server type definitions
+│   └── photos.json    # Photo database (auto-generated)
+├── scripts/           # Development tools
+│   └── css-utils.js   # CSS architecture management
+├── docs/              # Documentation
+│   └── CSS_DEVELOPMENT.md # CSS development guide
+├── uploads/           # Uploaded photos (auto-generated)
+├── tsconfig.json          # Main TypeScript configuration
+├── tsconfig.frontend.json # Frontend build configuration
+├── tsconfig.server.json   # Server build configuration
+├── package.json       # Node.js dependencies and scripts
+├── .gitignore        # Git ignore rules
+└── README.md         # This file
 ```
 
 ## 🔒 Security Features
