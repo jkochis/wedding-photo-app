@@ -467,7 +467,7 @@ if (CONFIG.DEBUG.ENABLE_GLOBAL_ACCESS) {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.register('./sw.js');
             log.info('ServiceWorker registered successfully', {
                 scope: registration.scope
             });
