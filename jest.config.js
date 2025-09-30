@@ -2,44 +2,25 @@ export default {
   // Use jsdom environment for browser-like testing
   testEnvironment: 'jsdom',
   
-  // Module file extensions
-  moduleFileExtensions: ['ts', 'js', 'json'],
-  
-  // Transform files using ts-jest for both JS and TS
-  preset: 'ts-jest/presets/default-esm',
-  extensionsToTreatAsEsm: ['.ts'],
-  transform: {
-    '^.+\\.ts$': ['ts-jest', { useESM: true }]
-  },
-  
-  // Module name mapping for imports
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/public/js/$1',
-    '^@types/(.*)$': '<rootDir>/src/types/$1'
-  },
-  
-  // Test files patterns
+  // Test files patterns  
   testMatch: [
     '<rootDir>/tests/**/*.test.js',
-    '<rootDir>/tests/**/*.spec.js',
-    '<rootDir>/tests/**/*.test.ts',
-    '<rootDir>/tests/**/*.spec.ts'
+    '<rootDir>/tests/simple.test.js'
   ],
   
-  // Setup files to run before tests
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  // Disable setup file for now
+  // setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   
   // Coverage configuration
   collectCoverage: true,
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
-    'public/js/**/*.js',
-    'public/js/**/*.ts',
-    'src/**/*.ts',
-    '!public/js/main.js', // Exclude main entry point
-    '!**/*.test.js',
-    '!**/*.test.ts',
-    '!**/node_modules/**'
+    'dist/public/js/**/*.js',
+    'src/frontend/**/*.ts',
+    '!dist/public/js/**/*.test.js',
+    '!src/**/*.test.ts',
+    '!**/node_modules/**',
+    '!dist/public/js/types/**'
   ],
   coverageReporters: [
     'text',

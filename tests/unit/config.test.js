@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import { CONFIG } from '../../public/js/config.js';
+import { CONFIG } from '../../dist/public/js/config.js';
 
 describe('Config Module', () => {
   describe('Structure validation', () => {

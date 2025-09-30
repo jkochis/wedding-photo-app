@@ -23,11 +23,19 @@
     "css:analyze": "node scripts/css-utils.js analyze",
     "css:component": "node scripts/css-utils.js component",
     "css:utility": "node scripts/css-utils.js utility",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "npm run build:frontend && jest",
+    "test:watch": "npm run build:frontend && jest --watch",
+    "test:coverage": "npm run build:frontend && jest --coverage",
+    "test:unit": "jest --testPathPattern=tests/unit"
   },
-  "keywords": ["wedding", "photos", "typescript", "mobile", "pwa", "face-detection"],
+  "keywords": [
+    "wedding",
+    "photos",
+    "typescript",
+    "mobile",
+    "pwa",
+    "face-detection"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -39,12 +47,14 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.5.2",
     "@types/uuid": "^10.0.0",
+    "babel-jest": "^30.2.0",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "ts-jest": "^29.4.4",
