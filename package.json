@@ -5,7 +5,9 @@
   "description": "A mobile-first wedding photo sharing app with TypeScript, face detection, and secure access control",
   "main": "server/index.cjs",
   "scripts": {
-    "start": "npm run build:frontend && node server/index.cjs",
+    "start": "node server/index.cjs",
+    "start:production": "npm run build:server && node dist/server/index.js",
+    "start:dev": "npm run build:frontend && npm start",
     "dev": "npm run build:frontend && npm start",
     "build": "npm run clean:dist && npm run build:frontend && npm run build:server",
     "build:frontend": "cp -r src/types/ src/frontend/types/ && tsc --project tsconfig.frontend.json",
