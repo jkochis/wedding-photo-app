@@ -3,9 +3,10 @@
   "compilerOptions": {
     "outDir": "./dist/public/js",
     "rootDir": "./src/frontend",
-    "baseUrl": "./src/frontend",
+    "baseUrl": "./src",
     "paths": {
-      "@/types/*": ["../types/*"]
+      "@/types/*": ["./types/*"],
+      "./types/*": ["./types/*"]
     }
   },
   "include": [
