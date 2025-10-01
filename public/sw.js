@@ -1,12 +1,24 @@
 // Wedding Photo App Service Worker
-const CACHE_NAME = 'wedding-photos-v2';
+const CACHE_NAME = 'wedding-photos-v3';
 const urlsToCache = [
     '/',
+    '/index.html',
     '/css/main.css',
+    '/manifest.json',
+    // All modular JavaScript files
     '/js/main.js',
+    '/js/api-client.js',
     '/js/config.js',
-    '/js/utils.js',
-    '/manifest.json'
+    '/js/face-detection.js',
+    '/js/filter-manager.js',
+    '/js/logger.js',
+    '/js/modal-manager.js',
+    '/js/photo-manager.js',
+    '/js/skeleton-loader.js',
+    '/js/state.js',
+    '/js/theme-manager.js',
+    '/js/upload-manager.js',
+    '/js/utils.js'
 ];
 
 // Install event - cache resources
