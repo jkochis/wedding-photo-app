@@ -3,7 +3,7 @@
  * Centralized configuration for the entire application
  */
 
-import type { AppConfig } from './types/index.js';
+import type { AppConfig } from '@/types/index.js';
 
 export const CONFIG: AppConfig = {
     // API Configuration

@@ -9,7 +9,7 @@ import { state } from './state.js';
 import apiClient from './api-client.js';
 import photoManager from './photo-manager.js';
 import Utils from './utils.js';
-import type { PhotoTag, Photo, UploadResponse } from './types/index.js';
+import type { PhotoTag, Photo, UploadResponse } from '@/types/index.js';
 
 interface ValidationResult {
     valid: boolean;

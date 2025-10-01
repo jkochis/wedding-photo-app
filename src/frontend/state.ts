@@ -3,7 +3,7 @@
  * Centralized state management with event-driven updates
  */
 
-import type { Photo, PhotoTag } from './types/index.js';
+import type { Photo, PhotoTag } from '@/types/index.js';
 
 interface AppState {
     photos: Photo[];

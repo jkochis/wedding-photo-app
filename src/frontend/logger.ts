@@ -4,7 +4,7 @@
  */
 
 import { CONFIG } from './config.js';
-import type { LogLevel } from './types/index.js';
+import type { LogLevel } from '@/types/index.js';
 
 interface LogEntry {
     timestamp: string;

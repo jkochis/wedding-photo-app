@@ -63,7 +63,7 @@ npm run css:component <name>  # Create new CSS component
 npm run css:utility <name>    # Create new CSS utility file
 ```
 
-For detailed CSS development guidance, see [`docs/CSS_DEVELOPMENT.md`](docs/CSS_DEVELOPMENT.md).
+For detailed CSS development guidance, see the development documentation.
 
 ## 🔑 Access Control
 
@@ -150,10 +150,15 @@ To allow guests on your WiFi to access the app:
 ### Cloud Deployment
 
 For internet-wide access, deploy to platforms like:
+- **Railway**: Simple Node.js deployment (see [docs/deployment/](docs/deployment/))
 - **Heroku**: Easy deployment with git
 - **Vercel**: Great for static sites with serverless functions  
-- **Railway**: Simple Node.js deployment
 - **DigitalOcean**: VPS hosting
+
+For detailed deployment instructions, see:
+- **[docs/deployment/RAILWAY_SETUP_CHECKLIST.md](docs/deployment/RAILWAY_SETUP_CHECKLIST.md)** - Quick Railway deployment
+- **[docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md)** - Complete deployment guide
+- **[docs/gcs/GCS_SETUP.md](docs/gcs/GCS_SETUP.md)** - Google Cloud Storage setup
 
 ## 📁 Project Structure
 
@@ -197,7 +202,11 @@ wedding-photo-app/
 │   └── photos.json    # Photo database (auto-generated)
 ├── scripts/           # Development tools
 │   └── css-utils.js   # CSS architecture management
-├── docs/              # Documentation
+├── docs/              # Documentation (organized by category)
+│   ├── README.md      # Documentation index
+│   ├── deployment/    # Deployment guides
+│   ├── gcs/           # Google Cloud Storage setup
+│   └── development/   # Development workflows
 │   └── CSS_DEVELOPMENT.md # CSS development guide
 ├── uploads/           # Uploaded photos (auto-generated)
 ├── tsconfig.json          # Main TypeScript configuration

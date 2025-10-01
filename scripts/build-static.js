@@ -36,13 +36,13 @@ async function copyDirectory(src, dest) {
 }
 
 async function copyCompiledJS() {
-    const distFrontendDir = path.join(PROJECT_ROOT, 'dist/frontend');
+    const distPublicJsDir = path.join(PROJECT_ROOT, 'dist/public/js');
     const staticJsDir = path.join(DIST_STATIC, 'js');
     
     try {
         await fs.mkdir(staticJsDir, { recursive: true });
-        await copyDirectory(distFrontendDir, staticJsDir);
-        console.log(`📄 Copied compiled frontend to js/`);
+        await copyDirectory(distPublicJsDir, staticJsDir);
+        console.log(`📄 Copied compiled frontend from dist/public/js to js/`);
     } catch (error) {
         console.warn('⚠️  Could not copy compiled JS files:', error.message);
         console.log('   Make sure to run "npm run build:frontend" first');

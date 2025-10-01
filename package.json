@@ -6,12 +6,9 @@
   "main": "server/index.cjs",
   "scripts": {
     "start": "node server/index.cjs",
-    "start:production": "npm run build:server && node dist/server/index.js",
-    "start:dev": "npm run build:frontend && npm start",
     "dev": "npm run build:frontend && npm start",
-    "build": "npm run clean:dist && npm run build:frontend && npm run build:server",
+    "build": "npm run clean:dist && npm run build:frontend",
     "build:frontend": "tsc --project tsconfig.frontend.json",
-    "build:server": "tsc --project tsconfig.server.json",
     "build:static": "npm run build:frontend && node scripts/build-static.js",
     "build:production": "npm run build && npm run build:static",
     "build:watch": "tsc --project tsconfig.frontend.json --watch",
