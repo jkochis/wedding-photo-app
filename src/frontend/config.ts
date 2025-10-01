@@ -23,8 +23,8 @@ export const CONFIG: AppConfig = {
         MAX_FILE_SIZE: 25 * 1024 * 1024, // 25MB
         MAX_BATCH_SIZE: 10,
         MAX_CONCURRENT: 3,
-        ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-        SUPPORTED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+        ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'],
+        SUPPORTED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'],
         MAX_WIDTH: 1920,
         RESIZE_MAX_WIDTH: 1920,
         QUALITY: 0.8,

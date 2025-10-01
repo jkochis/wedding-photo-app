@@ -11,6 +11,9 @@ import photoManager from './photo-manager.js';
 import Utils from './utils.js';
 import type { PhotoTag, Photo, UploadResponse } from '@/types/index.js';
 
+// Import heic2any for HEIC/HEIF conversion
+declare const heic2any: any;
+
 interface ValidationResult {
     valid: boolean;
     error?: string;
@@ -359,38 +362,107 @@ export class UploadManager {
     }
 
     /**
-     * Preprocess file before upload (compression, etc.)
+     * Preprocess file before upload (compression, HEIC conversion, etc.)
      */
     private async preprocessFile(file: File): Promise<File | Blob> {
-        // Skip preprocessing for small files
-        if (file.size < CONFIG.UPLOAD.COMPRESSION_THRESHOLD) {
-            return file;
-        }
-
         try {
+            // Convert HEIC/HEIF files to JPEG first
+            let processedFile = file;
+            if (file.type === 'image/heic' || file.type === 'image/heif') {
+                log.info('Converting HEIC/HEIF to JPEG', {
+                    originalFormat: file.type,
+                    filename: file.name
+                });
+
+                processedFile = await this.convertHeicToJpeg(file);
+
+                log.info('HEIC/HEIF conversion completed', {
+                    originalSize: Utils.formatFileSize(file.size),
+                    convertedSize: Utils.formatFileSize(processedFile.size)
+                });
+            }
+
+            // Skip compression for small files
+            if (processedFile.size < CONFIG.UPLOAD.COMPRESSION_THRESHOLD) {
+                return processedFile;
+            }
+
             log.info('Compressing image before upload', {
-                originalSize: Utils.formatFileSize(file.size),
-                filename: file.name
+                originalSize: Utils.formatFileSize(processedFile.size),
+                filename: processedFile.name || file.name
             });
-            
+
             const compressedFile = await this.compressImage(
-                file,
+                processedFile,
                 CONFIG.UPLOAD.MAX_WIDTH,
                 CONFIG.UPLOAD.QUALITY
             );
-            
+
             log.info('Image compressed', {
-                originalSize: Utils.formatFileSize(file.size),
+                originalSize: Utils.formatFileSize(processedFile.size),
                 compressedSize: Utils.formatFileSize(compressedFile.size),
-                reduction: `${Math.round((1 - compressedFile.size / file.size) * 100)}%`
+                reduction: `${Math.round((1 - compressedFile.size / processedFile.size) * 100)}%`
             });
-            
+
             return compressedFile;
-            
+
         } catch (error) {
-            log.warn('Image compression failed, using original', error);
+            log.warn('File preprocessing failed, using original', error);
             return file;
         }
+    }
+
+    /**
+     * Convert HEIC/HEIF file to JPEG using heic2any library
+     */
+    private async convertHeicToJpeg(file: File): Promise<File> {
+        try {
+            // Load heic2any library if not already loaded
+            if (typeof heic2any === 'undefined') {
+                await this.loadHeic2AnyLibrary();
+            }
+
+            // Convert HEIC to JPEG blob
+            const convertedBlob = await heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.9
+            }) as Blob;
+
+            // Create new File object with JPEG type
+            const convertedFile = new File(
+                [convertedBlob],
+                file.name.replace(/\.(heic|heif)$/i, '.jpg'),
+                {
+                    type: 'image/jpeg',
+                    lastModified: file.lastModified
+                }
+            );
+
+            return convertedFile;
+
+        } catch (error) {
+            log.error('HEIC conversion failed', error);
+            throw new Error(`Failed to convert HEIC file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+
+    /**
+     * Dynamically load heic2any library
+     */
+    private async loadHeic2AnyLibrary(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (typeof heic2any !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load heic2any library'));
+            document.head.appendChild(script);
+        });
     }
 
     /**
