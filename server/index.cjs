@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const { createStorage } = require('./storage/index.cjs');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -41,6 +42,38 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting for upload endpoint
+const uploadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Max 100 uploads per IP per 15 minutes
+    message: {
+        error: 'Too many upload requests from this IP, please try again later.'
+    },
+    standardHeaders: true, // Return rate limit info in RateLimit-* headers
+    legacyHeaders: false, // Disable X-RateLimit-* headers
+    skip: (req) => {
+        // Skip rate limiting in development
+        return process.env.NODE_ENV !== 'production';
+    }
+});
+
+// General API rate limiter
+const apiLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 60, // Max 60 requests per IP per minute
+    message: {
+        error: 'Too many requests from this IP, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        return process.env.NODE_ENV !== 'production';
+    }
+});
+
+// Apply general rate limiter to all API routes
+app.use('/api/', apiLimiter);
 
 // Access token validation middleware
 const validateAccess = (req, res, next) => {
@@ -140,7 +173,7 @@ app.get('/api/photos', validateAccess, (req, res) => {
 });
 
 // API to upload photos
-app.post('/api/upload', validateAccess, upload.single('photo'), async (req, res) => {
+app.post('/api/upload', uploadLimiter, validateAccess, upload.single('photo'), async (req, res) => {
     try {
         console.log('Upload request received:', {
             hasFile: !!req.file,
