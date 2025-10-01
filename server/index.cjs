@@ -168,9 +168,12 @@ app.get('/', (req, res) => {
     });
 });
 
-// API to get all photos
+// API to get all photos (exclude soft-deleted photos)
 app.get('/api/photos', validateAccess, (req, res) => {
-    res.json(photos);
+    // Filter out soft-deleted photos unless explicitly requested
+    const includeDeleted = req.query.includeDeleted === 'true';
+    const visiblePhotos = includeDeleted ? photos : photos.filter(p => !p.deleted);
+    res.json(visiblePhotos);
 });
 
 // Validation rules for upload
@@ -251,7 +254,30 @@ app.post('/api/upload',
     }
 });
 
-// API to delete a photo (optional, for admin purposes)
+// API to soft delete a photo (marks as deleted without removing file)
+app.patch('/api/photos/:id/delete', validateAccess, async (req, res) => {
+    try {
+        const photoId = req.params.id;
+        const photo = photos.find(p => p.id === photoId);
+        
+        if (!photo) {
+            return res.status(404).json({ error: 'Photo not found' });
+        }
+
+        // Mark as deleted
+        photo.deleted = true;
+        photo.deletedAt = new Date().toISOString();
+        await savePhotos();
+
+        console.log(`🗑️  Photo soft deleted: ${photo.filename}`);
+        res.json({ message: 'Photo deleted successfully', photo });
+    } catch (error) {
+        console.error('Soft delete error:', error);
+        res.status(500).json({ error: 'Failed to delete photo' });
+    }
+});
+
+// API to permanently delete a photo (hard delete - for admin purposes)
 app.delete('/api/photos/:id', validateAccess, async (req, res) => {
     try {
         const photoId = req.params.id;
@@ -274,7 +300,8 @@ app.delete('/api/photos/:id', validateAccess, async (req, res) => {
         photos.splice(photoIndex, 1);
         await savePhotos();
 
-        res.json({ message: 'Photo deleted successfully' });
+        console.log(`🗑️  Photo permanently deleted: ${photo.filename}`);
+        res.json({ message: 'Photo permanently deleted successfully' });
     } catch (error) {
         console.error('Delete error:', error);
         res.status(500).json({ error: 'Failed to delete photo' });

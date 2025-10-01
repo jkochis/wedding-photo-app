@@ -96,6 +96,14 @@ export class ModalManager {
             });
         }
 
+        // Delete button
+        const deleteBtn = document.getElementById('deletePhotoBtn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                this.handleDeletePhoto();
+            });
+        }
+
         // Modal background click to close
         const modal = document.getElementById('photoModal');
         if (modal) {
@@ -576,6 +584,71 @@ export class ModalManager {
      */
     public get isModalOpen(): boolean {
         return this.isOpen;
+    }
+
+    /**
+     * Handle photo deletion with confirmation
+     */
+    private async handleDeletePhoto(): Promise<void> {
+        const filteredPhotos = photoManager.getFilteredPhotos();
+        const currentPhoto = filteredPhotos[this.currentPhotoIndex];
+        
+        if (!currentPhoto) {
+            log.warn('No photo to delete');
+            return;
+        }
+        
+        // Show confirmation dialog
+        const confirmed = confirm(
+            `Are you sure you want to delete this photo?\n\nThis will remove the photo from the gallery.`
+        );
+        
+        if (!confirmed) {
+            log.info('Photo deletion cancelled by user');
+            return;
+        }
+        
+        try {
+            log.info('Deleting photo', { photoId: currentPhoto.id });
+            
+            // Disable delete button during deletion
+            const deleteBtn = document.getElementById('deletePhotoBtn') as HTMLButtonElement | null;
+            if (deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = '⏳ Deleting...';
+            }
+            
+            // Delete the photo
+            await photoManager.deletePhoto(currentPhoto.id);
+            
+            log.info('Photo deleted successfully');
+            
+            // Navigate to next photo or close modal if this was the last photo
+            const remainingPhotos = photoManager.getFilteredPhotos();
+            
+            if (remainingPhotos.length === 0) {
+                // No more photos, close modal
+                this.closeModal();
+            } else {
+                // Adjust current index if needed
+                if (this.currentPhotoIndex >= remainingPhotos.length) {
+                    this.currentPhotoIndex = remainingPhotos.length - 1;
+                }
+                // Display next photo
+                this.displayCurrentPhoto();
+            }
+            
+        } catch (error) {
+            log.error('Failed to delete photo', error);
+            alert('Failed to delete photo. Please try again.');
+            
+            // Re-enable delete button
+            const deleteBtn = document.getElementById('deletePhotoBtn') as HTMLButtonElement | null;
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '🗑️ Delete';
+            }
+        }
     }
 
     /**

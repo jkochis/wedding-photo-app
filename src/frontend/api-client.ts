@@ -273,9 +273,16 @@ export class ApiClient {
     }
 
     /**
-     * Delete a photo
+     * Soft delete a photo (marks as deleted, doesn't remove from storage)
      */
-    async deletePhoto(photoId: string): Promise<void> {
+    async deletePhoto(photoId: string): Promise<Photo> {
+        return this.patch<Photo>(`${CONFIG.API.ENDPOINTS.PHOTOS}/${photoId}/delete`);
+    }
+
+    /**
+     * Permanently delete a photo (hard delete - removes from storage)
+     */
+    async permanentlyDeletePhoto(photoId: string): Promise<void> {
         return this.delete<void>(`${CONFIG.API.ENDPOINTS.PHOTOS}/${photoId}`);
     }
 

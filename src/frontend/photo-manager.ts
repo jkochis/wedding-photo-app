@@ -148,7 +148,7 @@ export class PhotoManager {
     }
 
     /**
-     * Remove a photo
+     * Remove a photo from local state
      */
     removePhoto(photoId: string): Photo | null {
         const index = this.photos.findIndex(p => p.id === photoId);
@@ -171,6 +171,28 @@ export class PhotoManager {
         
         log.warn(`Photo not found for removal: ${photoId}`);
         return null;
+    }
+
+    /**
+     * Soft delete a photo (marks as deleted on server, removes from UI)
+     */
+    async deletePhoto(photoId: string): Promise<boolean> {
+        try {
+            log.info(`Soft deleting photo: ${photoId}`);
+            
+            // Call API to mark as deleted
+            await apiClient.deletePhoto(photoId);
+            
+            // Remove from local state
+            this.removePhoto(photoId);
+            
+            log.info(`Photo soft deleted successfully: ${photoId}`);
+            return true;
+            
+        } catch (error) {
+            log.error(`Failed to delete photo: ${photoId}`, error);
+            throw error;
+        }
     }
 
     /**

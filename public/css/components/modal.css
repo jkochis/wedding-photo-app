@@ -194,6 +194,38 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* Delete Button */
+.delete-photo-btn {
+  margin-top: var(--space-md);
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.delete-photo-btn:hover {
+  background: #d32f2f;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.delete-photo-btn:active {
+  transform: translateY(0);
+}
+
+.delete-photo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Navigation */
 .nav-btn {
   position: absolute;

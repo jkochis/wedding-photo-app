@@ -28,6 +28,8 @@ export interface Photo {
   size: number;
   uploadedAt: string;
   mimetype: string;
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 // ============================================================================
