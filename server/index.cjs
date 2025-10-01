@@ -6,6 +6,7 @@ const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const { createStorage } = require('./storage/index.cjs');
 const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 require('dotenv').config();
 
 const app = express();
@@ -172,9 +173,31 @@ app.get('/api/photos', validateAccess, (req, res) => {
     res.json(photos);
 });
 
+// Validation rules for upload
+const uploadValidation = [
+    body('tag')
+        .optional()
+        .isIn(['wedding', 'reception', 'other'])
+        .withMessage('Tag must be one of: wedding, reception, or other')
+];
+
 // API to upload photos
-app.post('/api/upload', uploadLimiter, validateAccess, upload.single('photo'), async (req, res) => {
+app.post('/api/upload', 
+    uploadLimiter, 
+    validateAccess, 
+    upload.single('photo'), 
+    uploadValidation,
+    async (req, res) => {
     try {
+        // Check for validation errors
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ 
+                error: 'Validation failed',
+                errors: errors.array() 
+            });
+        }
+        
         console.log('Upload request received:', {
             hasFile: !!req.file,
             body: req.body,
