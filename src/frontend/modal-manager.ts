@@ -8,7 +8,7 @@ import { log } from './logger.js';
 import { state } from './state.js';
 import photoManager from './photo-manager.js';
 import faceDetection from './face-detection.js';
-import type { Photo } from '@/types/index.js';
+import type { Photo } from '../types/index';
 
 interface ModalState {
     isOpen: boolean;

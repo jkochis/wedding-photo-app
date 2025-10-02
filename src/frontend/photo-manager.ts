@@ -8,7 +8,7 @@ import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
 import Utils from './utils.js';
-import type { Photo } from '@/types/index.js';
+import type { Photo } from '../types/index';
 
 export class PhotoManager {
     private photos: Photo[];

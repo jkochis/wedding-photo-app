@@ -7,7 +7,7 @@ import { CONFIG } from './config.js';
 import { log } from './logger.js';
 import { state } from './state.js';
 import photoManager from './photo-manager.js';
-import type { Photo, PhotoTag } from '@/types/index.js';
+import type { Photo, PhotoTag } from '../types/index';
 
 interface FilterStats {
     totalPhotos: number;
