@@ -140,6 +140,8 @@ export class AutocompleteInput {
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
+            color: #333;
+            background: white;
             outline: none;
             transition: border-color 0.2s ease;
             box-sizing: border-box;
@@ -184,7 +186,8 @@ export class AutocompleteInput {
             background: white;
             border-radius: 6px;
             cursor: pointer;
-            color: #666;
+            color: #555;
+            font-weight: 500;
         `;
 
         const confirmButton = document.createElement('button');
@@ -246,11 +249,13 @@ export class AutocompleteInput {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
+                color: #333;
             }
 
             .autocomplete-suggestions li:hover,
             .autocomplete-suggestions li.focused {
                 background-color: #f8f9fa;
+                color: #222;
             }
 
             .autocomplete-suggestions li:last-child {
@@ -259,19 +264,22 @@ export class AutocompleteInput {
 
             .autocomplete-suggestions .suggestion-icon {
                 font-size: 0.9rem;
-                color: #666;
+                color: #555;
             }
 
             .autocomplete-suggestions .suggestion-text {
                 flex: 1;
+                color: #333;
+                font-weight: 500;
             }
 
             .autocomplete-suggestions .suggestion-count {
                 font-size: 0.8rem;
-                color: #999;
-                background: #f0f0f0;
+                color: #666;
+                background: #e9ecef;
                 padding: 0.2rem 0.4rem;
                 border-radius: 12px;
+                font-weight: 500;
             }
 
             .autocomplete-confirm:hover {
