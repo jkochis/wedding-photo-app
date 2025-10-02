@@ -330,6 +330,38 @@ app.patch('/api/photos/:id/people', validateAccess, async (req, res) => {
     }
 });
 
+// API to update photo category/tag
+app.patch('/api/photos/:id/category', validateAccess, async (req, res) => {
+    try {
+        const photoId = req.params.id;
+        const { tag } = req.body;
+
+        // Validate tag value
+        const validTags = ['wedding', 'reception', 'other'];
+        if (!tag || !validTags.includes(tag)) {
+            return res.status(400).json({
+                error: 'Invalid tag. Must be one of: wedding, reception, other'
+            });
+        }
+
+        const photo = photos.find(p => p.id === photoId);
+        if (!photo) {
+            return res.status(404).json({ error: 'Photo not found' });
+        }
+
+        const oldTag = photo.tag;
+        photo.tag = tag;
+
+        await savePhotos();
+
+        console.log(`✅ Photo category updated: ${photoId} from "${oldTag}" to "${tag}"`);
+        res.json(photo);
+    } catch (error) {
+        console.error('Update category error:', error);
+        res.status(500).json({ error: 'Failed to update photo category' });
+    }
+});
+
 // API to get gallery stats
 app.get('/api/stats', validateAccess, (req, res) => {
     const stats = {
