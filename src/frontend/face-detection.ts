@@ -303,21 +303,24 @@ export class FaceDetection {
                 resolve();
                 return;
             }
-            
+
             const timeout = setTimeout(() => {
                 reject(new Error('Image load timeout'));
             }, CONFIG.FACE_DETECTION.LOAD_TIMEOUT);
-            
+
             imageElement.onload = () => {
                 clearTimeout(timeout);
                 resolve();
             };
-            
+
             imageElement.onerror = () => {
                 clearTimeout(timeout);
                 reject(new Error('Image failed to load'));
             };
-            
+
+            // Set crossOrigin for CORS compatibility before setting src
+            imageElement.crossOrigin = 'anonymous';
+
             // Force reload if needed
             if (!imageElement.src || imageElement.src !== imageUrl) {
                 imageElement.src = imageUrl;
