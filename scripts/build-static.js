@@ -43,15 +43,43 @@ async function copyCompiledJS() {
         await fs.mkdir(staticJsDir, { recursive: true });
         await copyDirectory(distPublicJsDir, staticJsDir);
 
-        // Copy main.js to the root of js directory for HTML compatibility
-        const mainJsSource = path.join(staticJsDir, 'frontend', 'main.js');
-        const mainJsTarget = path.join(staticJsDir, 'main.js');
+        // Copy all frontend JS files to the root of js directory for module resolution
+        const frontendJsDir = path.join(staticJsDir, 'frontend');
+        const frontendFiles = await fs.readdir(frontendJsDir);
 
-        try {
-            await fs.copyFile(mainJsSource, mainJsTarget);
-            console.log(`📄 Copied main.js to js/ root for HTML compatibility`);
-        } catch (mainJsError) {
-            console.warn('⚠️  Could not copy main.js to root:', mainJsError.message);
+        for (const file of frontendFiles) {
+            if (file.endsWith('.js')) {
+                const sourceFile = path.join(frontendJsDir, file);
+                const targetFile = path.join(staticJsDir, file);
+
+                try {
+                    await fs.copyFile(sourceFile, targetFile);
+                    console.log(`📄 Copied ${file} to js/ root for module resolution`);
+                } catch (copyError) {
+                    console.warn(`⚠️  Could not copy ${file}:`, copyError.message);
+                }
+            }
+        }
+
+        // Also copy types directory to js root
+        const typesDir = path.join(staticJsDir, 'types');
+        if (await fs.access(typesDir).then(() => true).catch(() => false)) {
+            const typesFiles = await fs.readdir(typesDir);
+            await fs.mkdir(path.join(staticJsDir, 'types-root'), { recursive: true });
+
+            for (const file of typesFiles) {
+                if (file.endsWith('.js')) {
+                    const sourceFile = path.join(typesDir, file);
+                    const targetFile = path.join(staticJsDir, 'types-root', file);
+
+                    try {
+                        await fs.copyFile(sourceFile, targetFile);
+                        console.log(`📄 Copied types/${file} for module resolution`);
+                    } catch (copyError) {
+                        console.warn(`⚠️  Could not copy types/${file}:`, copyError.message);
+                    }
+                }
+            }
         }
 
         console.log(`📄 Copied compiled frontend from dist/public/js to js/`);
