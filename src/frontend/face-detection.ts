@@ -7,6 +7,7 @@ import { CONFIG } from './config.js';
 import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
+import AutocompleteInput from './autocomplete.js';
 import type { Photo, FaceDetection as FaceDetectionType } from '../types/index';
 
 // External Face API types (simplified)
@@ -444,15 +445,37 @@ export class FaceDetection {
      * Tag a detected face with a person's name
      */
     private async tagFace(face: DetectedFace, faceIndex: number): Promise<void> {
-        const personName = prompt('Who is this person?');
-        
-        if (!personName || !personName.trim()) {
-            return;
-        }
-        
-        const trimmedName = personName.trim();
-        
         try {
+            // Get existing people names for autocomplete
+            const existingPeople = this.getAllPeopleNames();
+
+            // Create autocomplete input
+            const autocomplete = new AutocompleteInput(existingPeople, {
+                placeholder: 'Enter person\'s name...',
+                minLength: 1,
+                maxSuggestions: 8,
+                caseSensitive: false,
+                allowNew: true,
+                getPersonPhotoCount: (personName: string) => this.getPersonPhotoCount(personName)
+            });
+
+            // Show autocomplete and wait for result
+            const result = await autocomplete.show();
+
+            if (!result.value || !result.value.trim()) {
+                log.info('Face tagging cancelled by user');
+                return;
+            }
+
+            const trimmedName = result.value.trim();
+
+            // Show helpful message for new vs existing people
+            if (result.isNew) {
+                log.info('Adding new person to wedding photos', { name: trimmedName });
+            } else {
+                log.info('Tagging with existing person', { name: trimmedName });
+            }
+
             const currentPhotoIndex = state.get('currentPhotoIndex');
             const filteredPhotos = state.get('filteredPhotos');
             const photo = filteredPhotos[currentPhotoIndex];
@@ -734,6 +757,45 @@ export class FaceDetection {
             faceApiLoaded: this.faceApiLoaded,
             available: this.isAvailable()
         };
+    }
+
+    /**
+     * Get all unique people names from all photos for autocomplete
+     */
+    private getAllPeopleNames(): string[] {
+        const photos = state.get('photos') || [];
+        const allPeople = new Set<string>();
+
+        photos.forEach((photo: Photo) => {
+            if (photo.people && Array.isArray(photo.people)) {
+                photo.people.forEach(person => {
+                    if (person && person.trim()) {
+                        allPeople.add(person.trim());
+                    }
+                });
+            }
+        });
+
+        // Return sorted array for consistent ordering
+        return Array.from(allPeople).sort((a, b) => a.localeCompare(b));
+    }
+
+    /**
+     * Get the number of photos a person appears in
+     */
+    private getPersonPhotoCount(personName: string): number {
+        const photos = state.get('photos') || [];
+        let count = 0;
+
+        photos.forEach((photo: Photo) => {
+            if (photo.people && Array.isArray(photo.people)) {
+                if (photo.people.includes(personName)) {
+                    count++;
+                }
+            }
+        });
+
+        return count;
     }
 }
 

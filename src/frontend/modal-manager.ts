@@ -154,7 +154,30 @@ export class ModalManager {
             this.openModal(photo, index);
         });
 
+        // Category button event listeners
+        this.setupCategoryEventListeners();
+
         log.debug('Modal event listeners setup complete');
+    }
+
+    /**
+     * Setup category button event listeners
+     */
+    private setupCategoryEventListeners(): void {
+        const categoryButtons = document.querySelectorAll('.category-btn');
+
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', (e: Event) => {
+                const target = e.target as HTMLElement;
+                const category = target.dataset.category;
+
+                if (category) {
+                    this.handleCategoryChange(category as 'wedding' | 'reception' | 'other');
+                }
+            });
+        });
+
+        log.debug('Category event listeners setup complete');
     }
 
     /**
@@ -278,14 +301,35 @@ export class ModalManager {
             return;
         }
 
-        // Update image
+        // Update image with CORS error handling
+        modalImage.onerror = () => {
+            log.warn('Failed to load image due to CORS or network error', { url: photo.url });
+            // Try loading without crossOrigin attribute as fallback
+            const fallbackImage = new Image();
+            fallbackImage.onload = () => {
+                modalImage.src = fallbackImage.src;
+            };
+            fallbackImage.onerror = () => {
+                log.error('Image loading failed completely', { url: photo.url });
+                // Show error placeholder
+                modalImage.alt = 'Image failed to load due to CORS restrictions';
+                modalImage.style.backgroundColor = '#f0f0f0';
+                modalImage.style.minHeight = '200px';
+            };
+            // Try loading without crossOrigin
+            fallbackImage.src = photo.url;
+        };
+
+        modalImage.onload = () => {
+            log.debug('Image loaded successfully', { url: photo.url });
+        };
+
+        modalImage.crossOrigin = 'anonymous';
         modalImage.src = photo.url;
         modalImage.alt = `Wedding photo - ${photo.tag}`;
 
-        // Update tag
-        if (modalTag) {
-            modalTag.textContent = this.capitalizeFirst(photo.tag);
-        }
+        // Update category buttons to show current selection
+        this.updateCategoryButtons(photo.tag);
         
         // Update date
         if (modalDate) {
@@ -649,6 +693,145 @@ export class ModalManager {
                 deleteBtn.textContent = '🗑️ Delete';
             }
         }
+    }
+
+    /**
+     * Handle category change for current photo
+     */
+    private async handleCategoryChange(newCategory: 'wedding' | 'reception' | 'other'): Promise<void> {
+        const filteredPhotos = photoManager.getFilteredPhotos();
+        const currentPhoto = filteredPhotos[this.currentPhotoIndex];
+
+        if (!currentPhoto) {
+            log.warn('No current photo for category change');
+            return;
+        }
+
+        if (currentPhoto.tag === newCategory) {
+            log.debug('Category unchanged', { current: currentPhoto.tag, new: newCategory });
+            return;
+        }
+
+        try {
+            log.info('Changing photo category', {
+                photoId: currentPhoto.id,
+                from: currentPhoto.tag,
+                to: newCategory
+            });
+
+            // Update photo category
+            const success = await photoManager.updatePhotoCategory(currentPhoto.id, newCategory);
+
+            if (success) {
+                // Update local photo object
+                currentPhoto.tag = newCategory;
+
+                // Update category buttons
+                this.updateCategoryButtons(newCategory);
+
+                // Show success notification
+                this.showCategoryChangeNotification(newCategory);
+
+                log.info('Photo category updated successfully');
+            } else {
+                throw new Error('Failed to update photo category');
+            }
+
+        } catch (error) {
+            log.error('Failed to update photo category', error);
+            this.showErrorNotification('Failed to update category. Please try again.');
+        }
+    }
+
+    /**
+     * Update category buttons to reflect current selection
+     */
+    private updateCategoryButtons(currentCategory: string): void {
+        const categoryButtons = document.querySelectorAll('.category-btn');
+
+        categoryButtons.forEach(button => {
+            const btnElement = button as HTMLElement;
+            const category = btnElement.dataset.category;
+
+            if (category === currentCategory) {
+                btnElement.classList.add('active');
+            } else {
+                btnElement.classList.remove('active');
+            }
+        });
+
+        log.debug('Category buttons updated', { currentCategory });
+    }
+
+    /**
+     * Show category change notification
+     */
+    private showCategoryChangeNotification(category: string): void {
+        const categoryNames: Record<string, string> = {
+            wedding: '👰 Wedding',
+            reception: '🎉 Reception',
+            other: '📷 Other'
+        };
+
+        const message = `Photo moved to ${categoryNames[category] || category}`;
+        this.showNotification(message, 'success');
+    }
+
+    /**
+     * Show error notification
+     */
+    private showErrorNotification(message: string): void {
+        this.showNotification(message, 'error');
+    }
+
+    /**
+     * Show notification to user
+     */
+    private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `modal-notification ${type}`;
+
+        const colors: Record<string, string> = {
+            success: '#4CAF50',
+            error: '#f44336',
+            info: '#2196F3'
+        };
+
+        notification.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: ${colors[type] || colors.info};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1005;
+            max-width: 300px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        `;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 
     /**

@@ -283,4 +283,3 @@ We hope this app helps you collect and share beautiful memories from your specia
 
 *Built with love for couples who want to share their special moments with friends and family.* ❤️
 
-# Trigger GitHub Pages rebuild with CSP fixes Wed Oct  1 21:39:38 EDT 2025

@@ -223,8 +223,36 @@ export class PhotoManager {
             photos: this.photos,
             filteredPhotos: this.filteredPhotos
         });
-        
+
         return true;
+    }
+
+    /**
+     * Update photo category via API and local state
+     */
+    async updatePhotoCategory(photoId: string, newCategory: 'wedding' | 'reception' | 'other'): Promise<boolean> {
+        try {
+            // Update on server first
+            const success = await apiClient.updatePhotoCategory(photoId, newCategory);
+
+            if (!success) {
+                throw new Error('Server update failed');
+            }
+
+            // Update locally
+            const updated = this.updatePhoto(photoId, { tag: newCategory });
+
+            if (updated) {
+                log.info('Photo category updated successfully', { photoId, newCategory });
+                return true;
+            } else {
+                throw new Error('Local update failed');
+            }
+
+        } catch (error) {
+            log.error('Failed to update photo category', { photoId, newCategory, error });
+            return false;
+        }
     }
 
     /**

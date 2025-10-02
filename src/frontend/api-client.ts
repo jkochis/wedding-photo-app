@@ -264,12 +264,26 @@ export class ApiClient {
      * Update photo people tags
      */
     async updatePhotoPeople(
-        photoId: string, 
-        people: string[], 
+        photoId: string,
+        people: string[],
         faces: any[] | null = null
     ): Promise<Photo> {
         const endpoint = CONFIG.API.ENDPOINTS.PEOPLE.replace(':id', photoId);
         return this.patch<Photo>(endpoint, { people, faces });
+    }
+
+    /**
+     * Update photo category/tag
+     */
+    async updatePhotoCategory(photoId: string, category: 'wedding' | 'reception' | 'other'): Promise<boolean> {
+        try {
+            const endpoint = `${CONFIG.API.ENDPOINTS.PHOTOS}/${photoId}/category`;
+            await this.patch<Photo>(endpoint, { tag: category });
+            return true;
+        } catch (error) {
+            log.error('Failed to update photo category', { photoId, category, error });
+            return false;
+        }
     }
 
     /**
