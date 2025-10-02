@@ -38,10 +38,22 @@ async function copyDirectory(src, dest) {
 async function copyCompiledJS() {
     const distPublicJsDir = path.join(PROJECT_ROOT, 'dist/public/js');
     const staticJsDir = path.join(DIST_STATIC, 'js');
-    
+
     try {
         await fs.mkdir(staticJsDir, { recursive: true });
         await copyDirectory(distPublicJsDir, staticJsDir);
+
+        // Copy main.js to the root of js directory for HTML compatibility
+        const mainJsSource = path.join(staticJsDir, 'frontend', 'main.js');
+        const mainJsTarget = path.join(staticJsDir, 'main.js');
+
+        try {
+            await fs.copyFile(mainJsSource, mainJsTarget);
+            console.log(`📄 Copied main.js to js/ root for HTML compatibility`);
+        } catch (mainJsError) {
+            console.warn('⚠️  Could not copy main.js to root:', mainJsError.message);
+        }
+
         console.log(`📄 Copied compiled frontend from dist/public/js to js/`);
     } catch (error) {
         console.warn('⚠️  Could not copy compiled JS files:', error.message);
