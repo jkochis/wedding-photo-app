@@ -42,6 +42,9 @@ export class ModalManager {
     private touchStartX: number;
     private touchEndX: number;
     private isInitialized: boolean;
+    private deleteButtonEnabled: boolean;
+    private secretCodeBuffer: string;
+    private readonly SECRET_CODE: string = 'DELETE123';
 
     constructor() {
         this.isOpen = false;
@@ -49,7 +52,9 @@ export class ModalManager {
         this.touchStartX = 0;
         this.touchEndX = 0;
         this.isInitialized = false;
-        
+        this.deleteButtonEnabled = false;
+        this.secretCodeBuffer = '';
+
         this.init();
     }
 
@@ -114,10 +119,15 @@ export class ModalManager {
             });
         }
 
-        // Keyboard navigation
+        // Keyboard navigation and secret code detection
         document.addEventListener('keydown', (e: KeyboardEvent) => {
             if (!this.isOpen) return;
-            
+
+            // Check for secret code (only process alphanumeric keys)
+            if (e.key.match(/^[a-zA-Z0-9]$/)) {
+                this.handleSecretCodeInput(e.key.toUpperCase());
+            }
+
             switch (e.key) {
                 case 'Escape':
                     this.closeModal();
@@ -219,6 +229,12 @@ export class ModalManager {
 
         this.displayCurrentPhoto();
         this.showModal();
+
+        // Hide delete button initially
+        this.hideDeleteButton();
+
+        // Reset secret code buffer
+        this.secretCodeBuffer = '';
         
         // Show navigation hint if there are multiple photos
         const filteredPhotos = photoManager.getFilteredPhotos();
@@ -634,9 +650,15 @@ export class ModalManager {
      * Handle photo deletion with confirmation
      */
     private async handleDeletePhoto(): Promise<void> {
+        // Check if delete is enabled
+        if (!this.deleteButtonEnabled) {
+            log.warn('Delete button not enabled');
+            return;
+        }
+
         const filteredPhotos = photoManager.getFilteredPhotos();
         const currentPhoto = filteredPhotos[this.currentPhotoIndex];
-        
+
         if (!currentPhoto) {
             log.warn('No photo to delete');
             return;
@@ -692,6 +714,69 @@ export class ModalManager {
                 deleteBtn.disabled = false;
                 deleteBtn.textContent = '🗑️ Delete';
             }
+        }
+    }
+
+    /**
+     * Handle secret code input to enable delete button
+     */
+    private handleSecretCodeInput(key: string): void {
+        // Add character to buffer
+        this.secretCodeBuffer += key;
+
+        // Keep buffer length reasonable
+        if (this.secretCodeBuffer.length > this.SECRET_CODE.length) {
+            this.secretCodeBuffer = this.secretCodeBuffer.slice(-this.SECRET_CODE.length);
+        }
+
+        // Check if buffer ends with secret code
+        if (this.secretCodeBuffer.endsWith(this.SECRET_CODE)) {
+            this.enableDeleteButton();
+            log.info('Secret code entered - delete button enabled');
+        }
+    }
+
+    /**
+     * Enable the delete button
+     */
+    private enableDeleteButton(): void {
+        if (this.deleteButtonEnabled) return;
+
+        this.deleteButtonEnabled = true;
+        const deleteBtn = document.getElementById('deletePhotoBtn') as HTMLElement | null;
+
+        if (deleteBtn) {
+            deleteBtn.style.display = 'block';
+            deleteBtn.style.opacity = '0';
+            deleteBtn.style.animation = 'fadeIn 0.5s ease forwards';
+
+            // Add CSS animation if not already present
+            if (!document.getElementById('deleteButtonAnimation')) {
+                const style = document.createElement('style');
+                style.id = 'deleteButtonAnimation';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Show notification that delete is now available
+            this.showNotification('Delete button is now enabled', 'info');
+        }
+    }
+
+    /**
+     * Hide the delete button by default
+     */
+    private hideDeleteButton(): void {
+        this.deleteButtonEnabled = false;
+        const deleteBtn = document.getElementById('deletePhotoBtn') as HTMLElement | null;
+
+        if (deleteBtn) {
+            deleteBtn.style.display = 'none';
         }
     }
 

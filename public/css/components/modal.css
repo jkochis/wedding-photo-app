@@ -269,7 +269,7 @@
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all var(--transition-normal);
-  display: inline-flex;
+  display: none; /* Hidden by default - requires secret code to show */
   align-items: center;
   gap: var(--space-xs);
 }
