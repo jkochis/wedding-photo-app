@@ -55,12 +55,14 @@ export class FaceDetection {
     private faceApiLoaded: boolean;
     private isInitialized: boolean;
     private modelsLoading: boolean;
+    private faceBoxesVisible: boolean;
 
     constructor() {
         this.faceApiLoaded = false;
         this.isInitialized = false;
         this.modelsLoading = false;
-        
+        this.faceBoxesVisible = false;
+
         // Defer initialization to not block UI
         setTimeout(() => this.init(), 100);
     }
@@ -123,7 +125,7 @@ export class FaceDetection {
             state.set('faceApiLoaded', true);
             
             // Enable button
-            this.updateButtonState(true, CONFIG.FACE_DETECTION.BUTTON_TEXT);
+            this.updateButtonState(true, '🧑‍🤝‍🧑 Show People');
             
             log.info('Face API loaded successfully');
             
@@ -147,7 +149,7 @@ export class FaceDetection {
             this.updateButtonState(false, 'Loading face detection...');
             
             detectBtn.addEventListener('click', () => {
-                this.detectFacesInCurrentPhoto();
+                this.toggleFaceBoxes();
             });
         }
     }
@@ -212,6 +214,95 @@ export class FaceDetection {
     }
 
     /**
+     * Toggle face boxes visibility
+     */
+    private async toggleFaceBoxes(): Promise<void> {
+        // Check if models are loaded
+        if (this.modelsLoading) {
+            this.showNotification('Face detection models are still loading, please wait...', 'info');
+            return;
+        }
+
+        if (!this.faceApiLoaded) {
+            this.showNotification('Face detection is not available', 'error');
+            return;
+        }
+
+        const modalImage = document.getElementById('modalImage') as HTMLImageElement | null;
+        if (!modalImage) {
+            log.error('Modal image element not found');
+            return;
+        }
+
+        if (this.faceBoxesVisible) {
+            // Hide face boxes
+            this.hideFaceBoxes();
+        } else {
+            // Show face boxes (detect if needed)
+            await this.showFaceBoxes();
+        }
+    }
+
+    /**
+     * Hide face boxes
+     */
+    private hideFaceBoxes(): void {
+        const modalImage = document.getElementById('modalImage') as HTMLImageElement | null;
+        if (modalImage) {
+            this.clearFaceBoxes(modalImage);
+            this.faceBoxesVisible = false;
+            this.updateDetectButtonText();
+            log.debug('Face boxes hidden');
+        }
+    }
+
+    /**
+     * Show face boxes (detect faces if needed)
+     */
+    private async showFaceBoxes(): Promise<void> {
+        const currentPhotoIndex = state.get('currentPhotoIndex');
+        const filteredPhotos = state.get('filteredPhotos');
+
+        if (!filteredPhotos || currentPhotoIndex >= filteredPhotos.length) {
+            log.warn('No current photo for face detection');
+            return;
+        }
+
+        const photo = filteredPhotos[currentPhotoIndex];
+        const modalImage = document.getElementById('modalImage') as HTMLImageElement | null;
+
+        if (!modalImage) {
+            log.error('Modal image element not found');
+            return;
+        }
+
+        // If photo already has faces, just display them
+        if (photo.faces && photo.faces.length > 0) {
+            this.displayExistingFaces(photo, modalImage);
+            this.faceBoxesVisible = true;
+            this.updateDetectButtonText();
+            log.debug('Displaying existing face boxes');
+        } else {
+            // Detect new faces
+            await this.detectFacesInCurrentPhoto();
+        }
+    }
+
+    /**
+     * Update detect button text based on current state
+     */
+    private updateDetectButtonText(): void {
+        const detectBtn = document.getElementById('detectFacesBtn') as HTMLButtonElement | null;
+        if (detectBtn && !detectBtn.disabled) {
+            if (this.faceBoxesVisible) {
+                detectBtn.textContent = '👁️ Hide People';
+            } else {
+                detectBtn.textContent = '🧑‍🤝‍🧑 Show People';
+            }
+        }
+    }
+
+    /**
      * Detect faces in the currently displayed photo
      */
     private async detectFacesInCurrentPhoto(): Promise<void> {
@@ -272,25 +363,29 @@ export class FaceDetection {
                 // Draw face boxes with a small delay for rendering
                 setTimeout(() => {
                     this.drawFaceBoxes(faces, modalImage);
+                    this.faceBoxesVisible = true;
+                    this.updateDetectButtonText();
                 }, CONFIG.FACE_DETECTION.RENDER_DELAY);
-                
+
                 this.showNotification(`Found ${faces.length} face(s)! Click on faces to tag people.`, 'success');
-                
+
                 // Update photo on server
                 await this.updatePhotoOnServer(photo);
-                
+
             } else {
+                this.faceBoxesVisible = false;
                 this.showNotification('No faces detected in this photo.', 'info');
             }
-            
+
         } catch (error) {
             log.error('Face detection failed', error);
             this.showNotification('Face detection failed. Please try again.', 'error');
+            this.faceBoxesVisible = false;
         } finally {
             // Restore button state
             if (detectBtn) {
                 detectBtn.disabled = false;
-                detectBtn.textContent = CONFIG.FACE_DETECTION.BUTTON_TEXT;
+                this.updateDetectButtonText();
             }
         }
     }
@@ -432,12 +527,12 @@ export class FaceDetection {
      */
     public clearFaceBoxes(imageElement: HTMLImageElement): void {
         const imageContainer = imageElement.parentElement;
-        
+
         if (!imageContainer) return;
-        
+
         const existingBoxes = imageContainer.querySelectorAll('.face-box');
         existingBoxes.forEach(box => box.remove());
-        
+
         log.debug(`Cleared ${existingBoxes.length} existing face boxes`);
     }
 
@@ -539,12 +634,14 @@ export class FaceDetection {
     public displayExistingFaces(photo: Photo, imageElement: HTMLImageElement): void {
         if (!photo.faces || photo.faces.length === 0) {
             this.clearFaceBoxes(imageElement);
+            this.faceBoxesVisible = false;
+            this.updateDetectButtonText();
             return;
         }
-        
+
         // Clear existing boxes first
         this.clearFaceBoxes(imageElement);
-        
+
         // Add delay to ensure image is rendered
         setTimeout(() => {
             log.info('Displaying existing faces for photo:', photo.id);
@@ -555,6 +652,8 @@ export class FaceDetection {
                 person: face.personName || null
             }));
             this.drawFaceBoxes(detectedFaces, imageElement);
+            this.faceBoxesVisible = true;
+            this.updateDetectButtonText();
         }, CONFIG.FACE_DETECTION.RENDER_DELAY);
     }
 
