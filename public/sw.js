@@ -1,5 +1,5 @@
 // Wedding Photo App Service Worker
-const CACHE_NAME = 'wedding-photos-v3';
+const CACHE_NAME = 'wedding-photos-v4';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -53,11 +53,14 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-    // Skip caching for API calls and uploads
-    if (event.request.url.includes('/api/') || event.request.url.includes('/uploads/')) {
+    // Skip caching for API calls, uploads, and external storage (Google Cloud Storage)
+    if (event.request.url.includes('/api/') ||
+        event.request.url.includes('/uploads/') ||
+        event.request.url.includes('storage.googleapis.com') ||
+        !event.request.url.startsWith(self.location.origin)) {
         return;
     }
-    
+
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
