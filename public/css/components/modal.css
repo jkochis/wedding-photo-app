@@ -156,14 +156,14 @@
 
 /* Modal Info */
 .modal-info {
-  padding: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
   background: var(--color-bg-card);
   text-align: center;
 }
 
 /* Photo Category Section */
 .photo-category-section {
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-sm);
 }
 
 .category-label {
@@ -171,12 +171,12 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 
 .category-buttons {
   display: flex;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -185,7 +185,7 @@
   background: var(--color-bg-muted);
   color: var(--color-text-secondary);
   border: 2px solid var(--color-border);
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -238,7 +238,7 @@
 .photo-date {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 
 .people-tags {
@@ -291,9 +291,9 @@
 
 /* Modal Actions Container */
 .modal-actions {
-  margin-top: var(--space-md);
+  margin-top: var(--space-sm);
   display: flex;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -303,7 +303,7 @@
   background: #4CAF50;
   color: white;
   border: none;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -335,7 +335,7 @@
   background: #f44336;
   color: white;
   border: none;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -459,7 +459,7 @@
   }
   
   .modal-info {
-    padding: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
   }
 
   .category-buttons {
@@ -467,9 +467,20 @@
   }
 
   .category-btn {
-    padding: var(--space-xs) var(--space-sm);
+    padding: var(--space-xs) var(--space-xs);
     font-size: var(--font-size-xs);
-    min-width: 80px;
+    min-width: 70px;
+  }
+
+  .modal-actions {
+    margin-top: var(--space-xs);
+    gap: var(--space-xs);
+  }
+
+  .download-photo-btn,
+  .delete-photo-btn {
+    padding: var(--space-xs) var(--space-xs);
+    font-size: var(--font-size-xs);
   }
 }
 
