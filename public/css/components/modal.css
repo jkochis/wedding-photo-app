@@ -289,6 +289,63 @@
   cursor: not-allowed;
 }
 
+/* Modal Actions Container */
+.modal-actions {
+  margin-top: var(--space-md);
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Download Button */
+.download-photo-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.download-photo-btn:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.download-photo-btn:active {
+  transform: translateY(0);
+}
+
+.download-photo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Update delete button to work with flex layout */
+.delete-photo-btn {
+  margin-top: 0; /* Remove individual margin since container handles spacing */
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: none; /* Hidden by default - requires secret code to show */
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 /* Navigation */
 .nav-btn {
   position: absolute;
@@ -468,6 +525,7 @@
 .modal.focus-mode .photo-counter,
 .modal.focus-mode .detect-faces-btn,
 .modal.focus-mode .modal-info,
+.modal.focus-mode .modal-actions,
 .modal.focus-mode .face-overlay,
 .modal.focus-mode .people-tags,
 .modal.focus-mode .face-box {

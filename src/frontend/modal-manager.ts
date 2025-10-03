@@ -111,6 +111,14 @@ export class ModalManager {
             });
         }
 
+        // Download button
+        const downloadBtn = document.getElementById('downloadPhotoBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                this.handleDownloadPhoto();
+            });
+        }
+
         // Modal background click to close
         const modal = document.getElementById('photoModal');
         if (modal) {
@@ -729,6 +737,140 @@ export class ModalManager {
                 deleteBtn.textContent = '🗑️ Delete';
             }
         }
+    }
+
+    /**
+     * Handle photo download
+     */
+    private async handleDownloadPhoto(): Promise<void> {
+        const filteredPhotos = photoManager.getFilteredPhotos();
+        const currentPhoto = filteredPhotos[this.currentPhotoIndex];
+
+        if (!currentPhoto) {
+            log.warn('No photo to download');
+            return;
+        }
+
+        try {
+            log.info('Downloading photo', { photoId: currentPhoto.id });
+
+            // Show downloading state
+            const downloadBtn = document.getElementById('downloadPhotoBtn') as HTMLButtonElement | null;
+            if (downloadBtn) {
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = '⏳ Downloading...';
+            }
+
+            // Try to download the image
+            await this.downloadImage(currentPhoto.url, currentPhoto.originalName || currentPhoto.filename);
+
+            log.info('Photo downloaded successfully');
+
+            // Show success notification
+            this.showNotification('Photo downloaded successfully!', 'success');
+
+        } catch (error) {
+            log.error('Failed to download photo', error);
+            this.showNotification('Failed to download photo. Please try again.', 'error');
+        } finally {
+            // Reset download button
+            const downloadBtn = document.getElementById('downloadPhotoBtn') as HTMLButtonElement | null;
+            if (downloadBtn) {
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = '💾 Download';
+            }
+        }
+    }
+
+    /**
+     * Download an image from URL
+     */
+    private async downloadImage(imageUrl: string, filename: string): Promise<void> {
+        try {
+            // First try to download directly if it's a same-origin image
+            const response = await fetch(imageUrl);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+
+            // Create download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename || 'wedding-photo.jpg';
+
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up
+            window.URL.revokeObjectURL(downloadUrl);
+
+        } catch (error) {
+            log.warn('Direct download failed, trying alternative method', error);
+
+            // Fallback: Try using canvas to handle CORS images
+            await this.downloadImageViaCanvas(imageUrl, filename);
+        }
+    }
+
+    /**
+     * Download image via canvas (handles CORS images)
+     */
+    private async downloadImageViaCanvas(imageUrl: string, filename: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const modalImage = document.getElementById('modalImage') as HTMLImageElement;
+
+            if (!modalImage || modalImage.src !== imageUrl) {
+                reject(new Error('Image not available for download'));
+                return;
+            }
+
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                reject(new Error('Canvas not supported'));
+                return;
+            }
+
+            // Set canvas size to match image
+            canvas.width = modalImage.naturalWidth || modalImage.width;
+            canvas.height = modalImage.naturalHeight || modalImage.height;
+
+            try {
+                // Draw image to canvas
+                ctx.drawImage(modalImage, 0, 0);
+
+                // Convert to blob and download
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Failed to create image blob'));
+                        return;
+                    }
+
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename || 'wedding-photo.jpg';
+
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    window.URL.revokeObjectURL(downloadUrl);
+                    resolve();
+                }, 'image/jpeg', 0.95);
+
+            } catch (error) {
+                reject(new Error('Failed to draw image to canvas - likely CORS restricted'));
+            }
+        });
     }
 
     /**
