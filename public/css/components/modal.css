@@ -469,7 +469,8 @@
 .modal.focus-mode .detect-faces-btn,
 .modal.focus-mode .modal-info,
 .modal.focus-mode .face-overlay,
-.modal.focus-mode .people-tags {
+.modal.focus-mode .people-tags,
+.modal.focus-mode .face-box {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal) ease;
