@@ -45,6 +45,7 @@ export class ModalManager {
     private deleteButtonEnabled: boolean;
     private secretCodeBuffer: string;
     private readonly SECRET_CODE: string = 'DELETE123';
+    private focusModeEnabled: boolean;
 
     constructor() {
         this.isOpen = false;
@@ -54,6 +55,7 @@ export class ModalManager {
         this.isInitialized = false;
         this.deleteButtonEnabled = false;
         this.secretCodeBuffer = '';
+        this.focusModeEnabled = false;
 
         this.init();
     }
@@ -164,6 +166,14 @@ export class ModalManager {
             this.openModal(photo, index);
         });
 
+        // Focus mode toggle button
+        const focusToggleBtn = document.getElementById('focusToggleBtn');
+        if (focusToggleBtn) {
+            focusToggleBtn.addEventListener('click', () => {
+                this.toggleFocusMode();
+            });
+        }
+
         // Category button event listeners
         this.setupCategoryEventListeners();
 
@@ -235,6 +245,10 @@ export class ModalManager {
 
         // Reset secret code buffer
         this.secretCodeBuffer = '';
+
+        // Reset focus mode to disabled
+        this.focusModeEnabled = false;
+        this.applyFocusMode();
         
         // Show navigation hint if there are multiple photos
         const filteredPhotos = photoManager.getFilteredPhotos();
@@ -945,6 +959,60 @@ export class ModalManager {
     private trackModalOpen(): void {
         const currentCount = parseInt(sessionStorage.getItem('modalOpenCount') || '0');
         sessionStorage.setItem('modalOpenCount', (currentCount + 1).toString());
+    }
+
+    /**
+     * Toggle focus mode on/off
+     */
+    public toggleFocusMode(): void {
+        this.focusModeEnabled = !this.focusModeEnabled;
+        this.applyFocusMode();
+
+        log.info('Focus mode toggled', { enabled: this.focusModeEnabled });
+
+        // Show notification
+        const message = this.focusModeEnabled ? 'Focus mode enabled' : 'Focus mode disabled';
+        this.showNotification(message, 'info');
+    }
+
+    /**
+     * Apply or remove focus mode styles and behavior
+     */
+    private applyFocusMode(): void {
+        const modal = document.getElementById('photoModal');
+        const focusToggleBtn = document.getElementById('focusToggleBtn');
+
+        if (!modal) return;
+
+        if (this.focusModeEnabled) {
+            modal.classList.add('focus-mode');
+            if (focusToggleBtn) {
+                focusToggleBtn.textContent = '👁️'; // Eye icon for exit focus mode
+                focusToggleBtn.title = 'Exit focus mode';
+            }
+        } else {
+            modal.classList.remove('focus-mode');
+            if (focusToggleBtn) {
+                focusToggleBtn.textContent = '🎯'; // Target icon for enter focus mode
+                focusToggleBtn.title = 'Toggle focus mode';
+            }
+        }
+    }
+
+    /**
+     * Get focus mode state
+     */
+    public isFocusModeEnabled(): boolean {
+        return this.focusModeEnabled;
+    }
+
+    /**
+     * Set focus mode programmatically
+     */
+    public setFocusMode(enabled: boolean): void {
+        if (this.focusModeEnabled !== enabled) {
+            this.toggleFocusMode();
+        }
     }
 
     /**
