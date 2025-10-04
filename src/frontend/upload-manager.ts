@@ -43,6 +43,7 @@ interface UploadStats {
 }
 
 export class UploadManager {
+    private static readonly PHOTOGRAPHER_STORAGE_KEY = 'wedding-app-photographer-name';
     private isUploading: boolean;
     private uploadQueue: UploadQueueItem[];
     private currentUploads: number;
@@ -69,17 +70,18 @@ export class UploadManager {
             log.debug('Upload Manager already initialized, skipping');
             return;
         }
-        
+
         log.info('Initializing Upload Manager');
-        
+
         this.setupEventListeners();
         this.setupDragAndDrop();
-        
+        this.loadPhotographerFromStorage();
+
         // Subscribe to state changes
         state.subscribe('selectedTag', (newTag) => {
             this.selectedTag = newTag as PhotoTag;
         });
-        
+
         this.initialized = true;
         log.info('Upload Manager initialized');
     }
@@ -91,6 +93,7 @@ export class UploadManager {
         const fileInput = document.getElementById('fileInput') as HTMLInputElement;
         const uploadArea = document.getElementById('uploadArea');
         const tagButtons = document.querySelectorAll('.tag-btn');
+        const photographerInput = document.getElementById('photographerName') as HTMLInputElement;
 
         // File input change handler
         if (fileInput) {
@@ -107,6 +110,13 @@ export class UploadManager {
             });
         }
 
+        // Photographer name input handler
+        if (photographerInput) {
+            photographerInput.addEventListener('input', () => {
+                this.savePhotographerToStorage();
+            });
+        }
+
         // Tag selection handlers
         tagButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -114,12 +124,12 @@ export class UploadManager {
                 // Update active tag button
                 tagButtons.forEach(b => b.classList.remove('active'));
                 target.classList.add('active');
-                
+
                 // Update selected tag
                 const tagValue = target.dataset.tag as PhotoTag;
                 this.selectedTag = tagValue;
                 state.set('selectedTag', this.selectedTag);
-                
+
                 log.debug('Tag selected:', this.selectedTag);
             });
         });
@@ -721,6 +731,39 @@ export class UploadManager {
      */
     public getPhotographer(): string {
         return this.getPhotographerName();
+    }
+
+    /**
+     * Load photographer name from localStorage
+     */
+    private loadPhotographerFromStorage(): void {
+        try {
+            const savedName = localStorage.getItem(UploadManager.PHOTOGRAPHER_STORAGE_KEY);
+            if (savedName) {
+                this.setPhotographer(savedName);
+                log.debug('Photographer name loaded from storage:', savedName);
+            }
+        } catch (error) {
+            log.warn('Failed to load photographer name from storage:', error);
+        }
+    }
+
+    /**
+     * Save photographer name to localStorage
+     */
+    private savePhotographerToStorage(): void {
+        try {
+            const currentName = this.getPhotographerName();
+            if (currentName) {
+                localStorage.setItem(UploadManager.PHOTOGRAPHER_STORAGE_KEY, currentName);
+                log.debug('Photographer name saved to storage:', currentName);
+            } else {
+                localStorage.removeItem(UploadManager.PHOTOGRAPHER_STORAGE_KEY);
+                log.debug('Empty photographer name, removed from storage');
+            }
+        } catch (error) {
+            log.warn('Failed to save photographer name to storage:', error);
+        }
     }
 }
 
