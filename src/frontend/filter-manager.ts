@@ -26,9 +26,12 @@ interface AvailableFilters {
     totalPeople: number;
 }
 
+type SortOption = 'newest' | 'oldest' | 'name' | 'size';
+
 interface FilterState {
     categoryFilter: PhotoTag | 'all';
     personFilter: string;
+    sortOption: SortOption;
     hasActiveFilters: boolean;
     availableFilters: AvailableFilters;
     stats: FilterStats;
@@ -37,11 +40,13 @@ interface FilterState {
 export class FilterManager {
     private currentCategoryFilter: PhotoTag | 'all';
     private currentPersonFilter: string;
+    private currentSortOption: SortOption;
     private isInitialized: boolean;
 
     constructor() {
         this.currentCategoryFilter = 'all';
         this.currentPersonFilter = '';
+        this.currentSortOption = 'newest';
         this.isInitialized = false;
         this.init();
     }
@@ -83,7 +88,16 @@ export class FilterManager {
                 this.setPersonFilter(target.value);
             });
         }
-        
+
+        // Sort filter dropdown
+        const sortFilter = document.getElementById('sortFilter') as HTMLSelectElement;
+        if (sortFilter) {
+            sortFilter.addEventListener('change', (e: Event) => {
+                const target = e.target as HTMLSelectElement;
+                this.setSortOption(target.value as SortOption);
+            });
+        }
+
         log.debug('Filter event listeners setup complete');
     }
     /**
@@ -163,6 +177,28 @@ export class FilterManager {
         // Log filter statistics
         this.logFilterStats();
     }
+
+    /**
+     * Set sort option
+     */
+    public setSortOption(sortOption: SortOption): void {
+        if (this.currentSortOption === sortOption) {
+            return; // No change needed
+        }
+
+        log.info('Setting sort option', { from: this.currentSortOption, to: sortOption });
+        this.currentSortOption = sortOption;
+
+        // Update UI
+        this.updateSortFilterUI();
+
+        // Apply filters with new sort
+        this.applyFilters();
+
+        // Log filter statistics
+        this.logFilterStats();
+    }
+
     /**
      * Clear all filters
      */
@@ -220,15 +256,47 @@ export class FilterManager {
         
         // Clear existing photos
         photoGrid.innerHTML = '';
-        
-        // Add filtered photos to gallery
-        filteredPhotos.forEach((photo, index) => {
+
+        // Sort photos according to current sort option
+        const sortedPhotos = this.sortPhotos(filteredPhotos);
+
+        // Add sorted and filtered photos to gallery
+        sortedPhotos.forEach((photo, index) => {
             const photoElement = this.createPhotoElement(photo, index);
             photoGrid.appendChild(photoElement);
         });
         
-        log.debug('Gallery display updated', { photoCount: filteredPhotos.length });
+        log.debug('Gallery display updated', { photoCount: sortedPhotos.length });
     }
+
+    /**
+     * Sort photos according to the current sort option
+     */
+    private sortPhotos(photos: Photo[]): Photo[] {
+        const photosCopy = [...photos]; // Don't mutate the original array
+
+        switch (this.currentSortOption) {
+            case 'newest':
+                return photosCopy.sort((a, b) =>
+                    new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+                );
+            case 'oldest':
+                return photosCopy.sort((a, b) =>
+                    new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime()
+                );
+            case 'name':
+                return photosCopy.sort((a, b) => {
+                    const nameA = (a.originalName || a.filename || '').toLowerCase();
+                    const nameB = (b.originalName || b.filename || '').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+            case 'size':
+                return photosCopy.sort((a, b) => (b.size || 0) - (a.size || 0));
+            default:
+                return photosCopy;
+        }
+    }
+
     /**
      * Create a photo element for display
      */
@@ -294,11 +362,23 @@ export class FilterManager {
     }
 
     /**
+     * Update sort filter UI
+     */
+    private updateSortFilterUI(): void {
+        const sortFilter = document.getElementById('sortFilter') as HTMLSelectElement;
+        if (sortFilter) {
+            sortFilter.value = this.currentSortOption;
+        }
+        log.debug('Sort filter UI updated', { active: this.currentSortOption });
+    }
+
+    /**
      * Update all filter UI elements
      */
     private updateFilterUI(): void {
         this.updateCategoryFilterUI();
         this.updatePersonFilterUI();
+        this.updateSortFilterUI();
         this.updatePeopleFilterOptions();
     }
     /**
@@ -514,6 +594,7 @@ export class FilterManager {
         return {
             categoryFilter: this.currentCategoryFilter,
             personFilter: this.currentPersonFilter,
+            sortOption: this.currentSortOption,
             hasActiveFilters: this.hasActiveFilters(),
             availableFilters: this.getAvailableFilters(),
             stats: this.getFilterStats()
@@ -527,12 +608,13 @@ export class FilterManager {
         log.info('Resetting filters to default state');
         this.currentCategoryFilter = 'all';
         this.currentPersonFilter = '';
-        
+        this.currentSortOption = 'newest';
+
         state.update({
             currentFilter: 'all' as PhotoTag | 'all',
             selectedPerson: ''
         });
-        
+
         this.updateFilterUI();
         this.applyFilters();
     }
