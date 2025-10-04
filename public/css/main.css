@@ -17,11 +17,12 @@
 @import 'utilities/visual.css';  /* Shadows, borders, colors, and visual effects */
 
 /* Components - UI Elements */
-@import 'components/header.css';  /* Header and theme toggle */
-@import 'components/upload.css';  /* File upload interface */
-@import 'components/filter.css';  /* Photo filtering controls */
-@import 'components/gallery.css'; /* Photo grid and gallery */
-@import 'components/modal.css';   /* Photo modal and viewer */
+@import 'components/header.css';        /* Header and theme toggle */
+@import 'components/upload.css';        /* File upload interface */
+@import 'components/filter.css';        /* Photo filtering controls */
+@import 'components/gallery.css';       /* Photo grid and gallery */
+@import 'components/modal.css';         /* Photo modal and viewer */
+@import 'components/notifications.css'; /* Notification system */
 
 /**
  * CSS Import Order Explanation:

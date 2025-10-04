@@ -23,6 +23,7 @@ import faceDetection from './face-detection.js';
 import uploadManager from './upload-manager.js';
 import filterManager from './filter-manager.js';
 import modalManager from './modal-manager.js';
+import notificationManager from './notification-manager.js';
 
 interface AppModules {
     config: typeof CONFIG;
@@ -36,6 +37,7 @@ interface AppModules {
     uploadManager: typeof uploadManager;
     filterManager: typeof filterManager;
     modalManager: typeof modalManager;
+    notificationManager: typeof notificationManager;
 }
 
 class WeddingPhotoApp {
@@ -79,7 +81,8 @@ class WeddingPhotoApp {
                 faceDetection: faceDetection,
                 uploadManager: uploadManager,
                 filterManager: filterManager,
-                modalManager: modalManager
+                modalManager: modalManager,
+                notificationManager: notificationManager
             };
 
             // Initialize modules in dependency order
@@ -185,14 +188,18 @@ class WeddingPhotoApp {
         // Wait a bit for DOM elements to be available
         await this.waitForDOMElements();
         
+        // Initialize Notification Manager (should be early to handle permissions)
+        await notificationManager.init();
+        log.info('✓ Notification Manager ready');
+
         // Initialize Upload Manager (depends on API Client and Photo Manager)
         uploadManager.init();
         log.info('✓ Upload Manager ready');
-        
+
         // Initialize Filter Manager (depends on Photo Manager)
         filterManager.init();
         log.info('✓ Filter Manager ready');
-        
+
         // Initialize Modal Manager (depends on Photo Manager and Face Detection)
         modalManager.init();
         log.info('✓ Modal Manager ready');
@@ -326,7 +333,8 @@ class WeddingPhotoApp {
             faceDetection: faceDetection.getStatus(),
             uploadManager: uploadManager.getStatus(),
             filterManager: filterManager.getCurrentState(),
-            modalManager: modalManager.getCurrentState()
+            modalManager: modalManager.getCurrentState(),
+            notificationManager: notificationManager.getStatus()
         };
         
         log.info('Module status:', status);

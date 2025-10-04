@@ -4,13 +4,31 @@
  */
 
 .header {
-  text-align: center;
   padding: var(--space-2xl) var(--space-md);
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   color: white;
   box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-text {
+  text-align: center;
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
 }
 
 .header::before {
@@ -68,17 +86,70 @@
   transform: scale(1.05);
 }
 
+/* Notification Toggle Button */
+.notification-toggle-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+  position: relative;
+  z-index: 1;
+}
+
+.notification-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.notification-toggle-btn.disabled {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.notification-toggle-btn.blocked {
+  background: rgba(255, 152, 0, 0.3);
+  border-color: rgba(255, 152, 0, 0.5);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .header-text {
+    order: 1;
+  }
+
+  .header-actions {
+    order: 2;
+  }
+
   .title {
     font-size: var(--font-size-2xl);
   }
-  
+
   .subtitle {
     font-size: var(--font-size-sm);
   }
-  
+
   .theme-toggle {
+    width: 40px;
+    height: 40px;
+    font-size: var(--font-size-md);
+  }
+
+  .notification-toggle-btn {
     width: 40px;
     height: 40px;
     font-size: var(--font-size-md);

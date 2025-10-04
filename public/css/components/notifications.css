@@ -1,0 +1,338 @@
+/**
+ * Notification System Styles
+ * Handles styling for in-app notifications and permission prompts
+ */
+
+/* Notification Container */
+.notification-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    max-width: 350px;
+    pointer-events: none;
+}
+
+/* Individual Notification */
+.notification {
+    background: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateX(100%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    max-width: 100%;
+    word-wrap: break-word;
+    position: relative;
+    font-family: var(--font-family);
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+/* Notification Types */
+.notification-info {
+    background: #2196F3;
+}
+
+.notification-success {
+    background: #4CAF50;
+}
+
+.notification-warning {
+    background: #FF9800;
+}
+
+.notification-error {
+    background: #f44336;
+}
+
+/* Notification Content */
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.notification-body {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Close Button */
+.notification-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* Permission Prompt */
+.notification-permission-prompt {
+    background: var(--primary-color);
+    border: none;
+    padding: 1.5rem;
+    border-radius: 12px;
+    min-width: 320px;
+    max-width: 400px;
+}
+
+.notification-permission-prompt .notification-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notification-permission-prompt .notification-body {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    opacity: 1;
+}
+
+.notification-permission-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.notification-permission-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.notification-permission-button.primary {
+    background: white;
+    color: var(--primary-color);
+}
+
+.notification-permission-button.primary:hover {
+    background: #f0f0f0;
+}
+
+.notification-permission-button.secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.notification-permission-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Notification Settings Toggle */
+.notification-settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--surface-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin: 1rem 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notification-settings-toggle:hover {
+    background: var(--surface-hover-color);
+}
+
+.notification-settings-toggle-label {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.notification-settings-toggle-description {
+    font-size: 0.85rem;
+    color: var(--text-muted-color);
+    margin-top: 0.25rem;
+}
+
+.notification-toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--border-color);
+    border-radius: 12px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.notification-toggle-switch.active {
+    background: var(--primary-color);
+}
+
+.notification-toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.notification-toggle-switch.active::after {
+    transform: translateX(20px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .notification-container {
+        top: 0.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+        max-width: none;
+    }
+
+    .notification {
+        margin-bottom: 0.25rem;
+        padding: 0.875rem;
+    }
+
+    .notification-permission-prompt {
+        min-width: auto;
+        padding: 1.25rem;
+    }
+
+    .notification-permission-buttons {
+        flex-direction: column-reverse;
+    }
+
+    .notification-permission-button {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .notification-settings-toggle {
+        background: var(--surface-dark-color);
+        border-color: var(--border-dark-color);
+    }
+
+    .notification-settings-toggle:hover {
+        background: var(--surface-dark-hover-color);
+    }
+
+    .notification-settings-toggle-label {
+        color: var(--text-dark-color);
+    }
+
+    .notification-settings-toggle-description {
+        color: var(--text-dark-muted-color);
+    }
+
+    .notification-toggle-switch {
+        background: var(--border-dark-color);
+    }
+}
+
+/* Animation for notification entrance */
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.notification.slide-in {
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+.notification.slide-out {
+    animation: slideOutToRight 0.3s ease-in;
+}
+
+/* Notification badge for settings */
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #f44336;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Notification status indicator */
+.notification-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: var(--surface-color);
+    color: var(--text-muted-color);
+}
+
+.notification-status.enabled {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+}
+
+.notification-status.disabled {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+}
+
+.notification-status.blocked {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+}

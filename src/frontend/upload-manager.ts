@@ -8,6 +8,7 @@ import { log } from './logger.js';
 import { state } from './state.js';
 import apiClient from './api-client.js';
 import photoManager from './photo-manager.js';
+import notificationManager from './notification-manager.js';
 import Utils from './utils.js';
 import type { PhotoTag, Photo, UploadResponse } from '../types/index';
 
@@ -363,9 +364,12 @@ export class UploadManager {
                 
                 // Add to photo manager
                 photoManager.addPhoto(photo);
-                
+
+                // Show notification for successful upload
+                notificationManager.notifyPhotoUploaded(photo, uploadItem.photographer);
+
                 uploadItem.resolve(photo);
-                
+
                 log.info('File uploaded successfully', {
                     filename: uploadItem.file.name,
                     photoId: photo.id
