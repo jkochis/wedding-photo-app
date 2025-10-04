@@ -252,10 +252,14 @@ export class ApiClient {
     /**
      * Upload a photo
      */
-    async uploadPhoto(file: File, tag: string = 'other'): Promise<UploadResponse> {
+    async uploadPhoto(file: File, tag: string = 'other', photographer?: string): Promise<UploadResponse> {
         const formData = new FormData();
         formData.append('photo', file);
         formData.append('tag', tag);
+
+        if (photographer && photographer.trim()) {
+            formData.append('photographer', photographer.trim());
+        }
 
         return this.post<UploadResponse>(CONFIG.API.ENDPOINTS.UPLOAD, formData);
     }

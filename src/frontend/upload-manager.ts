@@ -23,6 +23,7 @@ interface UploadQueueItem {
     id: string;
     file: File;
     tag: PhotoTag;
+    photographer?: string;
     resolve: (photo: Photo) => void;
     reject: (error: Error) => void;
 }
@@ -47,6 +48,7 @@ export class UploadManager {
     private currentUploads: number;
     private maxConcurrentUploads: number;
     private selectedTag: PhotoTag;
+    private photographer: string;
     private initialized: boolean;
 
     constructor() {
@@ -55,6 +57,7 @@ export class UploadManager {
         this.currentUploads = 0;
         this.maxConcurrentUploads = CONFIG.UPLOAD.MAX_CONCURRENT;
         this.selectedTag = 'wedding'; // Default tag
+        this.photographer = '';
         this.initialized = false;
     }
 
@@ -284,9 +287,13 @@ export class UploadManager {
      */
     private queueFileUpload(file: File): Promise<Photo> {
         return new Promise((resolve, reject) => {
+            // Get current photographer name
+            const photographerName = this.getPhotographerName();
+
             this.uploadQueue.push({
                 file,
                 tag: this.selectedTag,
+                photographer: photographerName,
                 resolve,
                 reject,
                 id: Utils.generateId()
@@ -339,7 +346,7 @@ export class UploadManager {
                 
                 // Upload file (cast Blob to File for API compatibility)
                 const fileToUpload = processedFile instanceof File ? processedFile : new File([processedFile], uploadItem.file.name, { type: processedFile.type });
-                const uploadResponse = await apiClient.uploadPhoto(fileToUpload, uploadItem.tag);
+                const uploadResponse = await apiClient.uploadPhoto(fileToUpload, uploadItem.tag, uploadItem.photographer);
                 
                 // Extract photo from response - handle both direct photo return and {photo: ...} structure
                 const photo = uploadResponse.photo || (uploadResponse as unknown as Photo);
@@ -688,6 +695,32 @@ export class UploadManager {
     private getTotalUploadSize(): number {
         const photos = state.get('photos') || [];
         return photos.reduce((sum: number, photo: Photo) => sum + (photo.size || 0), 0);
+    }
+
+    /**
+     * Get photographer name from input field
+     */
+    private getPhotographerName(): string {
+        const photographerInput = document.getElementById('photographerName') as HTMLInputElement;
+        return photographerInput?.value?.trim() || '';
+    }
+
+    /**
+     * Set photographer name
+     */
+    public setPhotographer(name: string): void {
+        this.photographer = name;
+        const photographerInput = document.getElementById('photographerName') as HTMLInputElement;
+        if (photographerInput) {
+            photographerInput.value = name;
+        }
+    }
+
+    /**
+     * Get current photographer name
+     */
+    public getPhotographer(): string {
+        return this.getPhotographerName();
     }
 }
 
